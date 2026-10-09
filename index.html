@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roque Pérez Calvo · Ingeniero de operaciones industriales y Lean</title>
+  <meta name="description" content="Soy Roque Pérez Calvo, ingeniero de operaciones industriales desde 2019 (mobiliario, automoción y reciclaje). Escribo Ingenio Lean, la newsletter para quienes dirigen PYMEs industriales, y preparo Dinero con Ingenio, sobre finanzas personales.">
+  <meta name="author" content="Roque Pérez Calvo">
+  <link rel="canonical" href="https://roqueperez.es/">
+
+  <!-- Cómo se ve la web al compartirla en redes -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Roque Pérez Calvo · Ingeniero de planta que escribe sobre fábricas y dinero">
+  <meta property="og:description" content="Mejora continua donde más duele: en el proceso real. Newsletter Ingenio Lean y proyecto Dinero con Ingenio.">
+  <meta property="og:url" content="https://roqueperez.es/">
+  <meta property="og:image" content="https://roqueperez.es/img/roque-brazos-cruzados.png">
+  <meta property="og:locale" content="es_ES">
+
+  <!-- Ficha para Google: quién es Roque -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Roque Pérez Calvo",
+    "url": "https://roqueperez.es/",
+    "jobTitle": "Ingeniero de operaciones industriales",
+    "description": "Ingeniero de operaciones industriales especializado en Lean y mejora continua. Fundador de Ingenio Lean.",
+    "address": { "@type": "PostalAddress", "addressLocality": "Alcoy", "addressRegion": "Alicante", "addressCountry": "ES" },
+    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Universitat Politècnica de València" },
+    "knowsAbout": ["Lean Manufacturing", "Mejora continua", "Optimización de procesos", "Cadena de suministro", "Finanzas personales"],
+    "sameAs": ["https://www.linkedin.com/in/roquepc/", "https://ingeniolean.substack.com"]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+  <!-- ===================== CABECERA ===================== -->
+  <header class="cabecera">
+    <div class="contenedor">
+      <a href="#inicio" class="logo"><span class="logo-marca">R<span>P</span></span>Roque Pérez</a>
+      <button class="boton-menu" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+      <ul class="menu">
+        <li><a href="#este-soy-yo">Este soy yo</a></li>
+        <li><a href="#ingenio-lean">Ingenio Lean</a></li>
+        <li><a href="#dinero-con-ingenio">Dinero con Ingenio</a></li>
+        <li><a href="apuntes-de-planta/index.html">Apuntes de planta</a></li>
+        <li><a href="#contacto" class="menu-destacado">¿Hablamos?</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===================== PORTADA ===================== -->
+    <section class="portada" id="inicio">
+      <div class="contenedor">
+        <div class="portada-texto">
+          <p class="etiqueta" data-texto="portada.etiqueta">Ingeniero de operaciones · Alcoy</p>
+          <h1>Roque <span class="apellidos">Pérez Calvo</span></h1>
+          <p class="portada-lema" data-texto="portada.lema">Ingeniero de planta. Cazador de <span class="subrayado">despilfarros</span>. Escribo sobre fábricas y sobre dinero.</p>
+          <p class="entradilla" data-texto="portada.entradilla">Llevo desde 2019 metido en fábricas de verdad: mobiliario, automoción, reciclaje. He visto de cerca lo que pasa cuando una empresa crece sin sistemas, y lo que cambia cuando por fin los tiene.</p>
+          <div class="botones">
+            <a href="#este-soy-yo" class="boton boton-secundario" data-texto="portada.boton-conoceme">Conóceme</a>
+            <a href="#ingenio-lean" class="boton boton-principal" data-texto="portada.boton-suscribete">Suscríbete a Ingenio Lean →</a>
+          </div>
+        </div>
+        <div class="portada-foto">
+          <img src="img/roque-brazos-cruzados.png" alt="Roque Pérez Calvo sonriendo con los brazos cruzados">
+          <div class="nota nota-1" data-texto="portada.nota-anos"><strong>+7 años</strong> a pie de planta</div>
+          <div class="nota nota-2" data-texto="portada.nota-ediciones"><strong>20</strong> ediciones de Ingenio Lean</div>
+          <div class="nota nota-3" data-texto="portada.nota-amarilla">mejora continua · mentalidad · industria</div>
+          <div class="nota nota-4" data-texto="portada.nota-seguidores"><strong>+600</strong> seguidores</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ESTE SOY YO ===================== -->
+    <section class="seccion" id="este-soy-yo">
+      <div class="contenedor">
+        <div class="yo-intro">
+          <div class="yo-foto aparece">
+            <img src="img/roque-pensando.png" alt="Roque pensando, con la mano en la barbilla">
+          </div>
+          <div class="yo-texto aparece">
+            <p class="etiqueta" data-texto="yo.etiqueta">01 · Este soy yo</p>
+            <p class="gancho" data-texto="yo.gancho">¿Ingeniero? Sí. <span class="subrayado">¿Me mancho las manos?</span> También.</p>
+            <div data-texto="yo.texto" data-formato="parrafos"><p>Soy de Alcoy y desde 2019 trabajo donde pasan las cosas: en la planta. Entre máquinas, utillajes, layouts y operarios en su día a día. Graduado en Ingeniería Mecánica y máster en Organización y Logística por la UPV, pero casi todo lo que sé de verdad lo he aprendido a pie de máquina (y equivocándome unas cuantas veces).</p><p>Lo mío es la <strong>mejora continua donde más duele</strong>: en el proceso real, no en la teoría. Buscar el cuello de botella, entender por qué existe y quitarlo de en medio. Solventar los problemas de raíz y no sobrevivir a base de parches.</p><p>Fuera de la empresa escribo. Sobre fábricas, en <strong>Ingenio Lean</strong>. Sobre dinero, en <strong>Dinero con Ingenio</strong>.</p></div>
+          </div>
+        </div>
+
+        <!-- Pilares -->
+        <h3 class="subtitulo aparece" data-texto="pilares.titulo">Mis tres pilares</h3>
+        <p class="subtitulo-intro aparece" data-texto="pilares.intro">Soy curioso por naturaleza y un pesado con eso de mejorar un poco cada día. Igual que en una fábrica, creo que una vida se sostiene sobre pocos pilares bien cuidados. Los míos son tres.</p>
+        <div class="pilares">
+          <article class="pilar aparece">
+            <span class="pilar-num">01</span>
+            <div class="pilar-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <h3 data-texto="pilares.1.titulo">Salud</h3>
+            <p data-texto="pilares.1.texto">Comer mejor y moverme más. Sin inventos ni dietas: constancia.</p>
+          </article>
+          <article class="pilar aparece">
+            <span class="pilar-num">02</span>
+            <div class="pilar-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+            <h3 data-texto="pilares.2.titulo">Dinero</h3>
+            <p data-texto="pilares.2.texto">Invertir, sacar adelante proyectos propios y no dejar de crecer como profesional.</p>
+          </article>
+          <article class="pilar aparece">
+            <span class="pilar-num">03</span>
+            <div class="pilar-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <h3 data-texto="pilares.3.titulo">Amor</h3>
+            <p data-texto="pilares.3.texto">Cuidar mis relaciones y aprender a quererme a mí mismo. El más complejo de los tres.</p>
+          </article>
+        </div>
+        <div class="lecturas aparece">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>
+          <span data-texto="pilares.libros">Y entre medias, libros. Mucha filosofía y mucho desarrollo personal. Pronto, aquí mismo, los que más me han ayudado.</span>
+        </div>
+
+        <!-- Recorrido -->
+        <h3 class="subtitulo aparece" data-texto="recorrido.titulo">El recorrido</h3>
+        <p class="subtitulo-intro aparece" data-texto="recorrido.intro">Este es el camino que me ha traído hasta aquí.</p>
+        <ol class="recorrido">
+          <li class="hito actual aparece">
+            <div class="hito-fecha" data-texto="recorrido.1.fechas">2025 — hoy</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.1.empresa">ACTIU</span>
+              <h3 data-texto="recorrido.1.puesto">Ingeniero de cadena de suministro</h3>
+              <p data-texto="recorrido.1.texto">Ahora me toca mirar el flujo completo: que lo que sale de producción llegue a expedición logística sin atascos por el camino. Datos, Excel avanzado, modelos en DAX, desarrollos complejos con IA, líder de la implantación de RFID interno y mucha coordinación entre áreas. Montando un sistema de Mejora Continua prácticamente desde 0.</p>
+            </div>
+          </li>
+          <li class="hito aparece">
+            <div class="hito-fecha" data-texto="recorrido.2.fechas">2023 — 2025</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.2.empresa">ACTIU</span>
+              <h3 data-texto="recorrido.2.puesto">Ingeniero de procesos</h3>
+              <p data-texto="recorrido.2.texto">Mejora continua en las cuatro naves productivas del mayor fabricante de mobiliario de oficina de la Comunidad Valenciana: métodos y tiempos, rediseño de layouts, utillaje, liderazgo de proyectos de mejora y Lean aplicado en planta.</p>
+            </div>
+          </li>
+          <li class="hito actual aparece">
+            <div class="hito-fecha" data-texto="recorrido.3.fechas">2024 — hoy</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.3.empresa">Ingenio Lean</span>
+              <h3 data-texto="recorrido.3.puesto">Fundador</h3>
+              <p data-texto="recorrido.3.texto">Mi proyecto personal. Una newsletter quincenal para quienes dirigen PYMEs industriales y una perspectiva de poder difundir y ayudar a otras empresas.</p>
+            </div>
+          </li>
+          <li class="hito aparece">
+            <div class="hito-fecha" data-texto="recorrido.4.fechas">2022 — 2023</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.4.empresa">FAPERIN</span>
+              <h3 data-texto="recorrido.4.puesto">Ingeniero de procesos y mantenimiento</h3>
+              <p data-texto="recorrido.4.texto">Gestión integral del mantenimiento de dos plantas de inyección de plástico para automoción (Tier 2): 13 inyectoras, más de 200 moldes y más de 60 proveedores técnicos. Aquí aprendí que el mantenimiento preventivo es la diferencia entre dormir tranquilo y que te suene el teléfono de madrugada.</p>
+            </div>
+          </li>
+          <li class="hito aparece">
+            <div class="hito-fecha" data-texto="recorrido.5.fechas">2021 — 2022</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.5.empresa">Estil Guru</span>
+              <h3 data-texto="recorrido.5.puesto">Ingeniero técnico</h3>
+              <p data-texto="recorrido.5.texto">Diseño 3D, planos, prototipos impresos en 3D, compras y más de 30 proveedores. Un poco de todo, que es como mejor se aprende.</p>
+            </div>
+          </li>
+          <li class="hito aparece">
+            <div class="hito-fecha" data-texto="recorrido.6.fechas">2019 — 2020</div>
+            <div>
+              <span class="hito-empresa" data-texto="recorrido.6.empresa">ACTECO</span>
+              <h3 data-texto="recorrido.6.puesto">Ingeniero técnico</h3>
+              <p data-texto="recorrido.6.texto">Mi primera fábrica, en el sector del reciclaje industrial. Nuevas instalaciones, el mantenimiento preventivo montado desde cero y un equipo de 8 técnicos a mi cargo. Bautismo de fuego.</p>
+            </div>
+          </li>
+        </ol>
+
+        <!-- Mochila -->
+        <h3 class="subtitulo aparece" data-texto="mochila.titulo">En la mochila</h3>
+        <div class="mochila">
+          <div class="mochila-item aparece">
+            <h3 data-texto="mochila.1.titulo">Formación</h3>
+            <ul data-texto="mochila.1.lista" data-formato="lista"><li>Máster en Ingeniería de Organización y Logística <span>· UPV</span></li><li>Grado en Ingeniería Mecánica <span>· UPV</span></li></ul>
+          </div>
+          <div class="mochila-item aparece">
+            <h3 data-texto="mochila.2.titulo">Idiomas</h3>
+            <ul data-texto="mochila.2.lista" data-formato="lista"><li>Valenciano y castellano <span>· nativo</span></li><li>Inglés <span>· profesional</span></li><li>Alemán <span>· básico</span></li></ul>
+          </div>
+          <div class="mochila-item aparece">
+            <h3 data-texto="mochila.3.titulo">Lo que mejor se me da</h3>
+            <ul data-texto="mochila.3.lista" data-formato="lista"><li>Optimización de procesos y Lean</li><li>Mejora continua</li><li>Gestión del cambio</li><li>Análisis de datos</li><li>Explicar lo complejo de forma sencilla</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== INGENIO LEAN ===================== -->
+    <section class="seccion oscura" id="ingenio-lean">
+      <div class="contenedor">
+        <div class="lean-grid">
+          <div class="aparece">
+            <p class="etiqueta" data-texto="lean.etiqueta">02 · Ingenio Lean</p>
+            <h2 data-texto="lean.titulo">La newsletter para fábricas que crecen… <span class="subrayado">y el caos con ellas</span>.</h2>
+            <p class="entradilla" data-texto="lean.entradilla">¿Tu fábrica crece pero los problemas también? Cada dos lunes, a las 7:00, envío una edición con tres cosas:</p>
+            <ol class="pasos">
+              <li class="paso"><span class="paso-num">01</span><div><strong data-texto="lean.paso-1.titulo">Un problema</strong><span data-texto="lean.paso-1.texto">De los que vives a diario.</span></div></li>
+              <li class="paso"><span class="paso-num">02</span><div><strong data-texto="lean.paso-2.titulo">Su causa raíz</strong><span data-texto="lean.paso-2.texto">Porque el síntoma casi nunca es el problema.</span></div></li>
+              <li class="paso"><span class="paso-num">03</span><div><strong data-texto="lean.paso-3.titulo">Una herramienta</strong><span data-texto="lean.paso-3.texto">Que puedes aplicar ese mismo lunes.</span></div></li>
+            </ol>
+            <p class="lean-para" data-texto="lean.texto">Sin teoría de manual que nunca ha sido implantada. Casos reales de planta, contados de tú a tú. Para dueños, gerentes y directores de PYMEs industriales. Y para cualquiera que sepa que el mayor obstáculo para mejorar no es técnico: es saber dónde mirar.</p>
+          </div>
+
+          <div class="suscripcion aparece">
+            <div class="suscripcion-cabecera">
+              <img src="img/roque-senalando.png" alt="Roque señalando hacia arriba">
+              <div>
+                <h3 data-texto="lean.suscripcion-titulo">Apúntate aquí</h3>
+                <p data-texto="lean.suscripcion-texto">Gratis. Cada dos lunes en tu bandeja. Te borras cuando quieras.</p>
+              </div>
+            </div>
+            <iframe src="https://ingeniolean.substack.com/embed" title="Formulario de suscripción a Ingenio Lean" loading="lazy" scrolling="no"></iframe>
+            <small data-texto="lean.suscripcion-nota">Se gestiona a través de Substack</small>
+          </div>
+        </div>
+
+        <div class="ediciones-titulo aparece">
+          <h3 data-texto="lean.ediciones-titulo">Las últimas ediciones</h3>
+          <a href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-texto="lean.ediciones-enlace">Ver todas →</a>
+        </div>
+        <div class="ediciones">
+          <a class="edicion aparece" href="https://ingeniolean.substack.com/p/20-esta-reunion-pudo-haber-sido-un" target="_blank" rel="noopener">
+            <span class="edicion-num">#20</span>
+            <h4>Esta reunión pudo haber sido un email</h4>
+            <p>Y la siguiente, también.</p>
+            <span class="edicion-fecha">28 sep 2026</span>
+          </a>
+          <a class="edicion aparece" href="https://ingeniolean.substack.com/p/19-no-te-falta-mano-de-obra-cualificada" target="_blank" rel="noopener">
+            <span class="edicion-num">#19</span>
+            <h4>No te falta mano de obra cualificada</h4>
+            <p>Te falta aprovecharla.</p>
+            <span class="edicion-fecha">14 sep 2026</span>
+          </a>
+          <a class="edicion aparece" href="https://ingeniolean.substack.com/p/18-somos-monos" target="_blank" rel="noopener">
+            <span class="edicion-num">#18</span>
+            <h4>Somos monos</h4>
+            <p>Haciendo el mono.</p>
+            <span class="edicion-fecha">31 ago 2026</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DINERO CON INGENIO ===================== -->
+    <section class="seccion" id="dinero-con-ingenio">
+      <div class="contenedor">
+        <div class="dinero aparece">
+          <div>
+            <p class="etiqueta" data-texto="dinero.etiqueta">03 · Dinero con Ingenio</p>
+            <h2 data-texto="dinero.titulo">Finanzas personales con la lógica de una fábrica.</h2>
+            <p class="entradilla" data-texto="dinero.entradilla">Si en la planta busco qué sobra y qué falta, aquí hago lo mismo con el dinero. Menos despilfarro y más sistema: el patrimonio se construye con método, no con suerte.</p>
+            <span class="sello" data-texto="dinero.sello">Próximamente</span>
+          </div>
+          <div>
+            <div class="temas" data-texto="dinero.temas" data-formato="temas"><span class="tema">Empezar a invertir desde cero</span><span class="tema">Ahorrar sin vivir a dieta</span><span class="tema">Gestión del patrimonio</span><span class="tema">Mentalidad financiera</span></div>
+            <p class="canales">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>
+              <span data-texto="dinero.canales">Lo estoy cocinando a fuego lento (como el interés compuesto).</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== APUNTES DE PLANTA ===================== -->
+    <section class="seccion" id="apuntes" style="padding-top: 0;">
+      <div class="contenedor">
+        <div class="apuntes">
+          <div class="aparece">
+            <p class="etiqueta" data-texto="apuntes.etiqueta">04 · Apuntes de planta</p>
+            <h2 data-texto="apuntes.titulo">Ideas cortas para que tu fábrica funcione mejor.</h2>
+            <p class="entradilla" data-texto="apuntes.entradilla">Lecturas de cinco minutos sobre los problemas de siempre. Si te quedas con ganas de más, cada apunte te lleva a la edición de la newsletter donde lo cuento a fondo.</p>
+            <div class="botones">
+              <a href="apuntes-de-planta/index.html" class="boton boton-secundario" data-texto="apuntes.boton">Ir a los apuntes →</a>
+            </div>
+          </div>
+          <div class="libreta aparece" data-texto="apuntes.libreta" data-formato="libreta"><p><strong>Apuntes — semana 41</strong></p><p>· Reunión de las 9:00 → <span class="tachado">1 hora</span> 15 min</p><p>· Cuello de botella: ¿la máquina o la cola?</p><p>· El preventivo sale más barato. <span class="subrayado">Siempre.</span></p><p>· Preguntar 5 veces "¿por qué?"</p><p>· Menos PowerPoint, más gemba.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTACTO ===================== -->
+    <section class="seccion seccion-contacto" id="contacto">
+      <div class="contenedor">
+        <div class="contacto">
+          <div class="contacto-foto aparece">
+            <img src="img/roque-te-senala.png" alt="Roque señalándote con el dedo">
+          </div>
+          <div class="contacto-texto aparece">
+            <p class="etiqueta" data-texto="contacto.etiqueta">05 · Contacto</p>
+            <h2 data-texto="contacto.titulo">¿Hablamos?</h2>
+            <p class="entradilla" data-texto="contacto.entradilla">Si tienes una fábrica que pide a gritos un poco de orden, una oferta interesante o simplemente quieres comentar una edición de la newsletter, escríbeme. Respondo yo, no un bot.</p>
+            <div class="contacto-tarjetas">
+              <a class="tarjeta-contacto" href="mailto:roqueperezcalvo@gmail.com">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>
+                <div><small data-texto="contacto.etiqueta-email-personal">Para hablar conmigo de algo personal</small><strong>roqueperezcalvo@gmail.com</strong></div>
+              </a>
+              <a class="tarjeta-contacto" href="mailto:ingeniolean@gmail.com">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20V9l6 4V9l6 4V4h8v16z"/></svg>
+                <div><small data-texto="contacto.etiqueta-email-proyectos">Proyectos y colaboraciones / newsletter</small><strong>ingeniolean@gmail.com</strong></div>
+              </a>
+              <a class="tarjeta-contacto" href="https://www.linkedin.com/in/roquepc/" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="4"/><path d="M7 10v7M7 7v.01M11 17v-7M11 13a3 3 0 0 1 6 0v4"/></svg>
+                <div><small data-texto="contacto.etiqueta-linkedin">LinkedIn</small><strong>linkedin.com/in/roquepc</strong></div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <span>© 2026 Roque Pérez Calvo</span>
+      <span data-texto="pie.frase">Hecha a mano desde Alcoy (con un poco de ayuda de la IA) ✌🏻</span>
+    </div>
+  </footer>
+
+  <script src="textos.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
