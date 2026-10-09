@@ -34,6 +34,8 @@ NOTION_TOKEN = os.environ.get("NOTION_TOKEN", "").strip()
 NOTION_VERSION = "2025-09-03"
 DS_TEXTOS = "148e0594-5608-499f-bbf6-87f5bd99bae7"
 DS_APUNTES = "3f22a7a0-ee64-8050-8e95-000b911a2f83"
+DS_PUBLICACIONES = "19c2a7a0-ee64-81ce-843d-000b3b7817fa"
+NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
 
 MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
@@ -50,7 +52,8 @@ def pedir(url, metodo="GET", datos=None, cabeceras=None):
     peticion = urllib.request.Request(url, data=cuerpo, method=metodo, headers=cabeceras or {})
     if cuerpo is not None:
         peticion.add_header("Content-Type", "application/json")
-    peticion.add_header("User-Agent", "robot-roqueperez.es")
+    if not peticion.has_header("User-agent"):
+        peticion.add_header("User-Agent", NAVEGADOR)
     with urllib.request.urlopen(peticion, timeout=30) as r:
         return r.read()
 
@@ -260,25 +263,48 @@ def volcar_textos(html_texto, textos):
 # ---------------------------------------------------------------- ediciones
 
 def ediciones_desde_substack():
-    datos = json.loads(pedir(f"{SUBSTACK}/api/v1/archive?sort=new&limit=50"))
+    datos = json.loads(pedir(f"{SUBSTACK}/api/v1/archive?sort=new&limit=50", cabeceras={"Accept": "application/json"}))
     numeradas = [p for p in datos if re.match(r"^\d+\.", p.get("title", ""))]
-    return numeradas
+    if not numeradas:
+        raise RuntimeError("Substack no devolvió ediciones")
+    return [{"titulo": p["title"], "subtitulo": p.get("subtitle") or "", "fecha": p["post_date"][:10],
+             "enlace": p["canonical_url"]} for p in numeradas]
+
+
+def ediciones_desde_notion():
+    """Plan B: la BBDD Publicaciones de Ingenio Lean (filas de newsletter publicadas y con enlace)."""
+    filas = consultar(DS_PUBLICACIONES, {"and": [
+        {"property": "Plataforma", "select": {"equals": "Newsletter"}},
+        {"property": "Estado", "status": {"equals": "Listo"}},
+        {"property": "Enlace ", "url": {"is_not_empty": True}},
+    ]})
+    ediciones = []
+    for f in filas:
+        titulo = valor_texto(f, "Tarea").strip()
+        fecha = valor_fecha(f, "Fecha Publicación")
+        if re.match(r"^\d+\.", titulo) and fecha:
+            ediciones.append({"titulo": titulo, "subtitulo": "", "fecha": fecha,
+                              "enlace": propiedad(f, "Enlace ").get("url")})
+    ediciones.sort(key=lambda e: e["fecha"], reverse=True)
+    if not ediciones:
+        raise RuntimeError("Notion no devolvió ediciones")
+    return ediciones
 
 
 def tarjetas_ediciones(ediciones):
     tarjetas = []
     for p in ediciones[:3]:
-        num, titulo = re.match(r"^(\d+)\.\s*(.*)$", p["title"]).groups()
-        subtitulo = (p.get("subtitle") or "").strip()
+        num, titulo = re.match(r"^(\d+)\.\s*(.*)$", p["titulo"]).groups()
+        subtitulo = p["subtitulo"].strip()
         if subtitulo and not subtitulo.endswith((".", "?", "!", "…")):
             subtitulo += "."
-        d = dt.date.fromisoformat(p["post_date"][:10])
+        d = dt.date.fromisoformat(p["fecha"])
         tarjetas.append(
-            f'          <a class="edicion aparece" href="{html.escape(p["canonical_url"])}" target="_blank" rel="noopener">\n'
+            f'          <a class="edicion aparece" href="{html.escape(p["enlace"])}" target="_blank" rel="noopener">\n'
             f'            <span class="edicion-num">#{num}</span>\n'
             f"            <h4>{html.escape(titulo)}</h4>\n"
-            f"            <p>{html.escape(subtitulo)}</p>\n"
-            f'            <span class="edicion-fecha">{d.day} {MESES[d.month - 1]} {d.year}</span>\n'
+            + (f"            <p>{html.escape(subtitulo)}</p>\n" if subtitulo else "")
+            + f'            <span class="edicion-fecha">{d.day} {MESES[d.month - 1]} {d.year}</span>\n'
             f"          </a>"
         )
     return '        <div class="ediciones">\n' + "\n".join(tarjetas) + "\n        </div>\n        "
@@ -486,6 +512,8 @@ def main():
 
     # 2. Ediciones
     ediciones = paso("ediciones_substack", ediciones_desde_substack)
+    if not ediciones:
+        ediciones = paso("ediciones_notion", ediciones_desde_notion)
     if ediciones:
         textos["portada.nota-ediciones"] = f"**{len(ediciones)}** ediciones de Ingenio Lean"
         portada = reemplazar_entre(portada, "EDICIONES", tarjetas_ediciones(ediciones))
