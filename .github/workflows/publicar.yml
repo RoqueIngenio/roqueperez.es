@@ -1,0 +1,41 @@
+# Publica la web en GitHub Pages.
+# Se ejecuta cada vez que se sube un cambio y también a mano
+# desde la pestaña Actions > "Publicar la web" > Run workflow.
+name: Publicar la web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Descargar la web
+        uses: actions/checkout@v4
+
+      - name: Preparar los archivos a publicar
+        run: rsync -a --exclude '.*' ./ _site/ --exclude '_site'
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Publicar
+        id: despliegue
+        uses: actions/deploy-pages@v4
