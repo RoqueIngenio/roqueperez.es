@@ -1,9 +1,14 @@
-# Publica la web en GitHub Pages.
-# Se ejecuta cada vez que se sube un cambio y también a mano
-# desde la pestaña Actions > "Publicar la web" > Run workflow.
+# Robot de la web roqueperez.es
+# Lee Notion (textos y apuntes) y Substack (ediciones), genera la web y la publica en GitHub Pages.
+# Se ejecuta:
+#   - cada día a las 6:15 UTC (8:15 en horario de verano, 7:15 en invierno; siempre después de la newsletter de las 7:00)
+#   - cada vez que se sube un cambio al repositorio
+#   - a mano: pestaña Actions > "Publicar la web" > Run workflow
 name: Publicar la web
 
 on:
+  schedule:
+    - cron: "15 6 * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -27,8 +32,11 @@ jobs:
       - name: Descargar la web
         uses: actions/checkout@v4
 
-      - name: Preparar los archivos a publicar
-        run: rsync -a --exclude '.*' ./ _site/ --exclude '_site'
+      - name: Generar la web con Notion y Substack
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          MARCAR_PUBLICADOS: si
+        run: python3 robot/construir.py
 
       - uses: actions/configure-pages@v5
 

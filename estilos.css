@@ -403,3 +403,51 @@ strong { font-weight: 700; }
   .libreta::before { left: 32px; }
   .suscripcion { padding: 26px 20px 20px; }
 }
+
+/* ---------- Blog: listado de apuntes ---------- */
+.blog-listado { padding: 70px 0 110px; }
+.blog-listado .contenedor { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.apunte-tarjeta {
+  display: flex; flex-direction: column; gap: 8px; text-decoration: none;
+  background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio);
+  padding: 28px; transition: transform .2s, box-shadow .2s;
+}
+.apunte-tarjeta:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--dorado); }
+.apunte-tarjeta .etiqueta { margin-bottom: 4px; }
+.apunte-tarjeta h2 { font-size: 1.5rem; margin: 0; }
+.apunte-tarjeta p { color: var(--tinta-2); font-size: 1rem; }
+.apunte-leer { margin-top: auto; padding-top: 10px; font-weight: 700; color: var(--principal); }
+
+/* ---------- Página de un apunte ---------- */
+.apunte { padding: 60px 0 110px; }
+.apunte-contenedor { max-width: 760px; }
+.apunte-volver { display: block; width: fit-content; margin-bottom: 34px; color: var(--tinta-3); text-decoration: none; font-weight: 500; }
+.apunte-volver:hover { color: var(--principal); }
+.apunte h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; margin-bottom: 20px; }
+.apunte .entradilla { margin-bottom: 40px; }
+.apunte-cuerpo { font-size: 1.12rem; }
+.apunte-cuerpo p, .apunte-cuerpo ul, .apunte-cuerpo ol, .apunte-cuerpo blockquote, .apunte-cuerpo figure { margin-bottom: 1.2em; }
+.apunte-cuerpo p + p { margin-top: 0; }
+.apunte-cuerpo h2 { font-size: 1.7rem; margin: 1.8em 0 .6em; }
+.apunte-cuerpo h3 { font-size: 1.3rem; margin: 1.5em 0 .5em; }
+.apunte-cuerpo ul, .apunte-cuerpo ol { padding-left: 1.4em; }
+.apunte-cuerpo li { margin-bottom: .4em; }
+.apunte-cuerpo blockquote { border-left: 4px solid var(--dorado); padding: 4px 0 4px 20px; font-family: var(--f-titulo); font-size: 1.3rem; color: var(--principal); }
+.apunte-cuerpo a { color: var(--principal); }
+.apunte-cuerpo hr { border: 0; border-top: 2px dashed var(--linea); margin: 2em 0; }
+.apunte-cuerpo figure img { border-radius: 12px; border: 2px solid var(--tinta); }
+.apunte-cuerpo figcaption { font-size: .9rem; color: var(--tinta-3); margin-top: 8px; text-align: center; }
+.apunte-cuerpo code { font-family: var(--f-mono); font-size: .9em; background: var(--papel-2); padding: 1px 6px; border-radius: 4px; }
+.nota-apunte { background: var(--dorado-claro); border-radius: 12px; padding: 18px 22px; margin-bottom: 1.2em; }
+.apunte-edicion, .apunte-suscripcion { margin-top: 50px; border-radius: 20px; padding: 32px; }
+.apunte-edicion { background: var(--principal); color: var(--papel); box-shadow: 8px 8px 0 var(--dorado); }
+.apunte-edicion .etiqueta { color: var(--dorado); }
+.apunte-edicion p { margin-bottom: 20px; }
+.apunte-suscripcion { border: 2px solid var(--tinta); background: var(--blanco); }
+.apunte-suscripcion h2 { font-size: 1.6rem; margin-bottom: 10px; }
+.apunte-suscripcion p { color: var(--tinta-2); margin-bottom: 20px; }
+
+@media (max-width: 760px) {
+  .blog-listado .contenedor { grid-template-columns: 1fr; }
+  .apunte-edicion, .apunte-suscripcion { padding: 24px 20px; }
+}
