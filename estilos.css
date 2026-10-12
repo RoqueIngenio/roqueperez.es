@@ -243,7 +243,8 @@ strong { font-weight: 700; }
 .paso-num { font-family: var(--f-mono); color: var(--dorado); font-size: 0.9rem; padding-top: 3px; }
 .paso strong { display: block; font-family: var(--f-titulo); font-size: 1.2rem; }
 .paso span { color: rgba(242, 239, 225, 0.7); font-size: 1rem; }
-.lean-para { color: rgba(242, 239, 225, 0.78); font-size: 1rem; }
+.pasos:last-child { margin-bottom: 0; }
+.lean-para { color: rgba(242, 239, 225, 0.78); font-size: 1rem; margin-top: 44px; }
 
 .suscripcion {
   background: var(--papel); color: var(--tinta);
