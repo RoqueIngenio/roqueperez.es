@@ -29,6 +29,7 @@ import unicodedata
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -296,8 +297,9 @@ def ediciones_desde_feed():
     for item in canal.findall("item"):
         titulo = (item.findtext("title") or "").strip()
         if re.match(r"^\d+\.", titulo):
-            ediciones.append({"titulo": titulo, "subtitulo": (item.findtext("description") or "").strip(),
-                              "fecha": "", "enlace": (item.findtext("link") or "").strip()})
+            fecha = parsedate_to_datetime(item.findtext("pubDate")).astimezone(ZoneInfo("Europe/Madrid")).date().isoformat()
+            ediciones.append({"titulo": titulo, "subtitulo": html.unescape(item.findtext("description") or "").strip(),
+                              "fecha": fecha, "enlace": (item.findtext("link") or "").strip()})
     if not ediciones:
         raise RuntimeError("El feed de Substack no devolvió ediciones")
     return ediciones
@@ -585,11 +587,14 @@ def main():
     # 2. Ediciones
     ediciones = paso("ediciones_substack", ediciones_desde_substack)
     if not ediciones:
+        ediciones = paso("ediciones_feed", ediciones_desde_feed)
+    if not ediciones:
         ediciones = paso("ediciones_notion", ediciones_desde_notion)
     if ediciones:
-        textos["portada.nota-ediciones"] = f"**{len(ediciones)}** ediciones de Ingenio Lean"
+        total = max(numero_edicion(e["titulo"]) for e in ediciones)  # el feed solo trae las 20 últimas
+        textos["portada.nota-ediciones"] = f"**{total}** ediciones de Ingenio Lean"
         portada = reemplazar_entre(portada, "EDICIONES", tarjetas_ediciones(ediciones))
-        estado["ediciones"] = len(ediciones)
+        estado["ediciones"] = total
 
     # 3. Apuntes
     apuntes = paso("apuntes_notion", apuntes_desde_notion) or []
