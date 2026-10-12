@@ -341,11 +341,11 @@ def rellenar_enlaces():
 
 
 def ediciones_desde_notion():
-    """Plan B: la BBDD Publicaciones de Ingenio Lean (filas de newsletter publicadas y con enlace)."""
+    """Plan C: la BBDD Publicaciones de Ingenio Lean (filas de newsletter en Listo).
+    Si a una le falta el enlace, la tarjeta lleva al archivo de Substack."""
     filas = consultar(DS_PUBLICACIONES, {"and": [
         {"property": "Plataforma", "select": {"equals": "Newsletter"}},
         {"property": "Estado", "status": {"equals": "Listo"}},
-        {"property": "Enlace ", "url": {"is_not_empty": True}},
     ]})
     ediciones = []
     for f in filas:
@@ -353,7 +353,7 @@ def ediciones_desde_notion():
         fecha = valor_fecha(f, "Fecha Publicación")
         if re.match(r"^\d+\.", titulo) and fecha:
             ediciones.append({"titulo": titulo, "subtitulo": "", "fecha": fecha,
-                              "enlace": propiedad(f, "Enlace ").get("url")})
+                              "enlace": propiedad(f, "Enlace ").get("url") or f"{SUBSTACK}/archive"})
     ediciones.sort(key=lambda e: e["fecha"], reverse=True)
     if not ediciones:
         raise RuntimeError("Notion no devolvió ediciones")
