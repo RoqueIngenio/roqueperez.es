@@ -99,6 +99,61 @@ if ("IntersectionObserver" in window) {
   bloques.forEach((bloque) => bloque.classList.add("visible"));
 }
 
+// Buscador de apuntes: filtra las tarjetas por palabras y por tema, sin recargar la página.
+// La selección se guarda en la dirección (?q=...&tema=...) para poder compartirla.
+const buscador = document.querySelector("[data-buscador]");
+
+if (buscador) {
+  const campo = buscador.querySelector("input");
+  const filtros = buscador.querySelectorAll(".filtro");
+  const cuenta = buscador.querySelector(".buscador-cuenta");
+  const tarjetas = document.querySelectorAll(".apunte-tarjeta");
+  const vacio = document.querySelector(".buscador-vacio");
+  const sinTildes = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  let tema = "";
+
+  const filtrar = () => {
+    const palabras = sinTildes(campo.value).split(/\s+/).filter(Boolean);
+    let visibles = 0;
+    tarjetas.forEach((tarjeta) => {
+      const coincide =
+        (!tema || tarjeta.dataset.tema === tema) &&
+        palabras.every((p) => tarjeta.dataset.buscar.includes(p));
+      tarjeta.hidden = !coincide;
+      if (coincide) visibles++;
+    });
+    filtros.forEach((f) => {
+      const activo = f.dataset.tema === tema;
+      f.classList.toggle("activo", activo);
+      f.setAttribute("aria-pressed", activo);
+    });
+    cuenta.textContent = visibles === 1 ? "1 apunte" : `${visibles} apuntes`;
+    vacio.hidden = visibles > 0;
+    const parametros = new URLSearchParams();
+    if (campo.value.trim()) parametros.set("q", campo.value.trim());
+    if (tema) parametros.set("tema", tema);
+    const consulta = parametros.toString();
+    try {
+      history.replaceState(null, "", consulta ? `?${consulta}` : location.pathname);
+    } catch (error) { /* abierta con doble clic: la dirección no se puede cambiar */ }
+  };
+
+  const inicial = new URLSearchParams(location.search);
+  campo.value = inicial.get("q") || "";
+  const temaInicial = sinTildes(inicial.get("tema") || "");
+  if ([...filtros].some((f) => f.dataset.tema === temaInicial)) tema = temaInicial;
+
+  campo.addEventListener("input", filtrar);
+  filtros.forEach((f) => f.addEventListener("click", () => { tema = f.dataset.tema; filtrar(); }));
+  vacio.querySelector("[data-limpiar]").addEventListener("click", () => {
+    campo.value = "";
+    tema = "";
+    filtrar();
+    campo.focus();
+  });
+  filtrar();
+}
+
 // Substack no deja mostrar su formulario en una web abierta como archivo (doble clic).
 // En ese caso se cambia por un botón que lleva a la página de suscripción.
 // Una vez publicada la web, se ve el formulario normal.

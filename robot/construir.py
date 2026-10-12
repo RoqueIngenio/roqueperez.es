@@ -521,20 +521,54 @@ def pagina_apunte(a, plantilla_blog):
     return cabeza + cuerpo + pie
 
 
+def para_buscar(texto):
+    """Minúsculas y sin tildes, para que el buscador encuentre «gestion» en «Gestión»."""
+    sin_tildes = unicodedata.normalize("NFD", texto or "")
+    return "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn").lower()
+
+
 def listado_apuntes(apuntes):
-    tarjetas = []
+    tarjetas, temas = [], {}
     for a in apuntes:
         meta = " · ".join(x for x in [fecha_bonita(a["fecha"]), a["tema"]] if x)
+        if a["tema"]:
+            temas[a["tema"]] = temas.get(a["tema"], 0) + 1
+        subtitulos = " ".join(re.sub(r"<[^>]+>", "", h) for h in re.findall(r"<h[23]>(.*?)</h[23]>", a["cuerpo"], re.S))
+        buscar = para_buscar(html.unescape(" ".join([a["titulo"], a["resumen"], a["tema"] or "", subtitulos])))
         tarjetas.append(
-            f'        <a class="apunte-tarjeta" href="{a["slug"]}/">\n'
-            f'          <span class="etiqueta">{html.escape(meta)}</span>\n'
-            f'          <h2>{html.escape(a["titulo"])}</h2>\n'
-            + (f'          <p>{html.escape(a["resumen"])}</p>\n' if a["resumen"] else "")
-            + '          <span class="apunte-leer">Leer el apunte →</span>\n'
-            "        </a>"
+            f'          <a class="apunte-tarjeta" href="{a["slug"]}/" data-tema="{html.escape(para_buscar(a["tema"]))}"'
+            f' data-buscar="{html.escape(buscar)}">\n'
+            f'            <span class="etiqueta">{html.escape(meta)}</span>\n'
+            f'            <h2>{html.escape(a["titulo"])}</h2>\n'
+            + (f'            <p>{html.escape(a["resumen"])}</p>\n' if a["resumen"] else "")
+            + '            <span class="apunte-leer">Leer el apunte →</span>\n'
+            "          </a>"
         )
-    return ('    <section class="blog-listado">\n      <div class="contenedor">\n'
-            + "\n".join(tarjetas) + "\n      </div>\n    </section>\n    ")
+    filtros = [f'<button type="button" class="filtro activo" data-tema="" aria-pressed="true">Todos <span>{len(apuntes)}</span></button>']
+    filtros += [f'<button type="button" class="filtro" data-tema="{html.escape(para_buscar(t))}" aria-pressed="false">'
+                f'{html.escape(t)} <span>{n}</span></button>' for t, n in sorted(temas.items())]
+    buscador = (
+        '        <div class="buscador" data-buscador>\n'
+        '          <label class="buscador-campo">\n'
+        '            <span class="etiqueta">Buscar en la libreta</span>\n'
+        '            <input type="search" placeholder="5S, reuniones, pedidos…" autocomplete="off" spellcheck="false">\n'
+        '          </label>\n'
+        '          <div class="buscador-temas" role="group" aria-label="Filtrar por tema">\n            '
+        + "\n            ".join(filtros) + "\n"
+        '          </div>\n'
+        '          <p class="buscador-cuenta" aria-live="polite"></p>\n'
+        '        </div>\n'
+    )
+    vacio = (
+        '        <div class="buscador-vacio" hidden>\n'
+        '          <span class="sello">Sin apuntes</span>\n'
+        '          <p>No tengo nada apuntado sobre eso todavía. Prueba con otra palabra o con otro tema.</p>\n'
+        '          <button type="button" class="boton boton-secundario" data-limpiar>Ver todos los apuntes</button>\n'
+        '        </div>\n'
+    )
+    return ('    <section class="blog-listado">\n      <div class="contenedor">\n' + buscador
+            + '        <div class="apuntes-rejilla">\n' + "\n".join(tarjetas) + "\n        </div>\n" + vacio
+            + "      </div>\n    </section>\n    ")
 
 
 def marcar_publicados(apuntes):
