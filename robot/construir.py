@@ -511,7 +511,7 @@ def pagina_apunte(a, plantilla_blog):
         <aside class="apunte-suscripcion">
           <h2>¿Te ha servido?</h2>
           <p>Cada dos lunes envío una edición de Ingenio Lean con un problema real de planta, su causa raíz y una herramienta para aplicar.</p>
-          <a class="boton boton-secundario" href="{SUBSTACK}/subscribe" target="_blank" rel="noopener">Suscribirme gratis →</a>
+          <a class="boton boton-secundario" href="{SUBSTACK}" target="_blank" rel="noopener">Suscribirme gratis →</a>
         </aside>
       </div>
     </article>
