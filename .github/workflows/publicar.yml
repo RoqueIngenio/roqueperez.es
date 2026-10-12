@@ -1,8 +1,7 @@
 # Robot de la web roqueperez.es
 # Lee Notion (textos y apuntes) y Substack (ediciones), genera la web y la publica en GitHub Pages.
-# Antes de generar la web, pasa a "Listo" en la BBDD Publicaciones lo que está en "Tramitado" con fecha de hoy.
+# Primero pone al día la BBDD Publicaciones de Notion (Tramitado → Listo y enlaces de Substack que falten); después publica.
 # Se ejecuta:
-#   - cada día a las 5:00 hora de España (programado a las 3:00 y 4:00 UTC; solo sigue el que cae a las 5 en España)
 #   - cada día a las 6:15 UTC (8:15 en horario de verano, 7:15 en invierno; siempre después de la newsletter de las 7:00)
 #   - cada vez que se sube un cambio al repositorio
 #   - a mano: pestaña Actions > "Publicar la web" > Run workflow
@@ -11,8 +10,6 @@ name: Publicar la web
 on:
   schedule:
     - cron: "15 6 * * *"
-    - cron: "0 3 * * *"
-    - cron: "0 4 * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -33,38 +30,21 @@ jobs:
       name: github-pages
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
-      - name: Comprobar la hora (las 5:00 en España)
-        id: hora
-        run: |
-          if [ "${{ github.event.schedule }}" = "0 3 * * *" ] || [ "${{ github.event.schedule }}" = "0 4 * * *" ]; then
-            if [ "$(TZ=Europe/Madrid date +%H)" != "05" ]; then
-              echo "No son las 5 en España: esta ejecución no hace nada."
-              echo "seguir=no" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          fi
-          echo "seguir=si" >> "$GITHUB_OUTPUT"
-
       - name: Descargar la web
-        if: steps.hora.outputs.seguir == 'si'
         uses: actions/checkout@v4
 
       - name: Generar la web con Notion y Substack
-        if: steps.hora.outputs.seguir == 'si'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           MARCAR_PUBLICADOS: si
         run: python3 robot/construir.py
 
       - uses: actions/configure-pages@v5
-        if: steps.hora.outputs.seguir == 'si'
 
       - uses: actions/upload-pages-artifact@v3
-        if: steps.hora.outputs.seguir == 'si'
         with:
           path: _site
 
       - name: Publicar
-        if: steps.hora.outputs.seguir == 'si'
         id: despliegue
         uses: actions/deploy-pages@v4

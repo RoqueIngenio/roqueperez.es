@@ -7,8 +7,9 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
   2. Últimas ediciones  ← Substack de Ingenio Lean
   3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado)
 
-Antes de todo eso, pasa a "Listo" las publicaciones de la BBDD Publicaciones
-que están en "Tramitado" y cuya fecha de publicación ya ha llegado (hora de España).
+Antes de todo eso, pone al día la BBDD Publicaciones de Notion:
+  - pasa a "Listo" lo que está en "Tramitado" con fecha de publicación de hoy o anterior (hora de España)
+  - rellena el "Enlace" de las ediciones de la newsletter que lo tengan vacío, buscándolas en Substack por su número
 
 Si una fuente falla, la web se publica igualmente con lo que ya tenía y el
 fallo queda anotado en _site/robot-estado.json.
@@ -27,6 +28,7 @@ import traceback
 import unicodedata
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -287,6 +289,55 @@ def ediciones_desde_substack():
              "enlace": p["canonical_url"]} for p in numeradas]
 
 
+def ediciones_desde_feed():
+    """Plan B para leer Substack: su feed RSS."""
+    canal = ET.fromstring(pedir(f"{SUBSTACK}/feed")).find("channel")
+    ediciones = []
+    for item in canal.findall("item"):
+        titulo = (item.findtext("title") or "").strip()
+        if re.match(r"^\d+\.", titulo):
+            ediciones.append({"titulo": titulo, "subtitulo": (item.findtext("description") or "").strip(),
+                              "fecha": "", "enlace": (item.findtext("link") or "").strip()})
+    if not ediciones:
+        raise RuntimeError("El feed de Substack no devolvió ediciones")
+    return ediciones
+
+
+def numero_edicion(titulo):
+    m = re.match(r"^\s*(\d+)\.", titulo or "")
+    return int(m.group(1)) if m else None
+
+
+def rellenar_enlaces():
+    """Pone el enlace de Substack en las ediciones de la newsletter ya publicadas que no lo tienen."""
+    hoy = dt.datetime.now(ZoneInfo("Europe/Madrid")).date().isoformat()
+    filas = consultar(DS_PUBLICACIONES, {"and": [
+        {"property": "Plataforma", "select": {"equals": "Newsletter"}},
+        {"property": "Enlace ", "url": {"is_empty": True}},
+        {"property": "Fecha Publicación", "date": {"on_or_before": hoy}},
+    ]})
+    if not filas:
+        return []
+    publicadas = None
+    for fuente in (ediciones_desde_substack, ediciones_desde_feed):
+        try:
+            publicadas = fuente()
+            break
+        except Exception as e:
+            print(f"[rellenar_enlaces] {fuente.__name__}: {e}", file=sys.stderr)
+    if publicadas is None:
+        raise RuntimeError("Substack no responde (ni la API ni el feed)")
+    por_numero = {numero_edicion(p["titulo"]): p["enlace"] for p in publicadas}
+    rellenadas = []
+    for f in filas:
+        titulo = valor_texto(f, "Tarea").strip()
+        enlace = por_numero.get(numero_edicion(titulo))
+        if enlace:
+            notion(f"pages/{f['id']}", "PATCH", {"properties": {"Enlace ": {"url": enlace}}})
+            rellenadas.append(titulo)
+    return rellenadas
+
+
 def ediciones_desde_notion():
     """Plan B: la BBDD Publicaciones de Ingenio Lean (filas de newsletter publicadas y con enlace)."""
     filas = consultar(DS_PUBLICACIONES, {"and": [
@@ -526,9 +577,10 @@ def main():
         textos.update(de_notion)
         estado["textos"] = len(de_notion)
 
-    # 0. Publicaciones de hoy: Tramitado → Listo (solo en GitHub)
+    # 0. Poner al día la BBDD Publicaciones (solo en GitHub)
     if os.environ.get("MARCAR_PUBLICADOS") == "si":
         estado["marcados_listo"] = paso("marcar_listos", marcar_listos) or []
+        estado["enlaces_rellenados"] = paso("rellenar_enlaces", rellenar_enlaces) or []
 
     # 2. Ediciones
     ediciones = paso("ediciones_substack", ediciones_desde_substack)
