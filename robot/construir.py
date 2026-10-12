@@ -5,7 +5,8 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
 
   1. Textos de la web   ← Notion, "BBDD. Textos de la web"
   2. Últimas ediciones  ← Substack de Ingenio Lean
-  3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado)
+  3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado
+                          y cuya "Fecha programada" ya ha llegado)
 
 Antes de todo eso, pone al día la BBDD Publicaciones de Notion:
   - pasa a "Listo" lo que está en "Tramitado" con fecha de publicación de hoy o anterior (hora de España)
@@ -444,14 +445,15 @@ def edicion_relacionada(pagina):
 
 
 def apuntes_desde_notion():
-    hoy = dt.date.today().isoformat()
+    hoy = dt.datetime.now(ZoneInfo("Europe/Madrid")).date().isoformat()
     filas = consultar(DS_APUNTES, {"or": [
         {"property": "Estado", "status": {"equals": "Aprobado"}},
         {"property": "Estado", "status": {"equals": "Publicado"}},
     ]})
     apuntes = []
     for f in filas:
-        fecha = valor_fecha(f, "Fecha de publicación") or f["created_time"][:10]
+        fecha = (valor_fecha(f, "Fecha programada") or valor_fecha(f, "Fecha de publicación")
+                 or f["created_time"][:10])
         if fecha > hoy:
             continue  # programado para más adelante
         titulo = valor_texto(f, "Idea").strip()
