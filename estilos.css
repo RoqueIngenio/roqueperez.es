@@ -244,7 +244,11 @@ strong { font-weight: 700; }
 .paso strong { display: block; font-family: var(--f-titulo); font-size: 1.2rem; }
 .paso span { color: rgba(242, 239, 225, 0.7); font-size: 1rem; }
 .pasos:last-child { margin-bottom: 0; }
-.lean-para { color: rgba(242, 239, 225, 0.78); font-size: 1rem; margin-top: 44px; }
+.lean-para {
+  margin-top: 64px; padding: 4px 0 4px 26px;
+  border-left: 3px solid var(--dorado);
+  color: rgba(242, 239, 225, 0.86); font-size: 1.08rem; line-height: 1.75;
+}
 
 .suscripcion {
   background: var(--papel); color: var(--tinta);
@@ -403,6 +407,7 @@ strong { font-weight: 700; }
   .libreta { padding: 28px 22px 28px 50px; }
   .libreta::before { left: 32px; }
   .suscripcion { padding: 26px 20px 20px; }
+  .lean-para { margin-top: 48px; padding-left: 20px; font-size: 1.02rem; }
 }
 
 /* ---------- Blog: listado de apuntes ---------- */

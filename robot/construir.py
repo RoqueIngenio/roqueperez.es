@@ -19,6 +19,7 @@ Solo usa la biblioteca estándar de Python: no hay nada que instalar.
 """
 
 import datetime as dt
+import hashlib
 import html
 import json
 import os
@@ -586,6 +587,18 @@ def escribir_sitemap(apuntes):
                                        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + filas + "</urlset>\n")
 
 
+def versionar_archivos():
+    """Añade ?v=… a estilos.css, script.js y textos.js en todas las páginas, para que
+    el navegador no use una copia antigua cuando cambian."""
+    version = {n: hashlib.md5((SALIDA / n).read_bytes()).hexdigest()[:8]
+               for n in ("estilos.css", "script.js", "textos.js")}
+    for pagina in SALIDA.rglob("*.html"):
+        texto = pagina.read_text()
+        nuevo = re.sub(r'(estilos\.css|script\.js|textos\.js)"', lambda m: f'{m.group(1)}?v={version[m.group(1)]}"', texto)
+        if nuevo != texto:
+            pagina.write_text(nuevo)
+
+
 # ---------------------------------------------------------------- principal
 
 def paso(nombre, funcion):
@@ -649,6 +662,7 @@ def main():
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":
         paso("marcar_publicados", lambda: marcar_publicados(apuntes))
 
+    versionar_archivos()
     (SALIDA / "robot-estado.json").write_text(json.dumps(estado, ensure_ascii=False, indent=2))
     print(json.dumps(estado, ensure_ascii=False, indent=2))
 
