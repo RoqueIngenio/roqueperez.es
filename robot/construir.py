@@ -7,6 +7,9 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
   2. Últimas ediciones  ← Substack de Ingenio Lean
   3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado)
 
+Antes de todo eso, pasa a "Listo" las publicaciones de la BBDD Publicaciones
+que están en "Tramitado" y cuya fecha de publicación ya ha llegado (hora de España).
+
 Si una fuente falla, la web se publica igualmente con lo que ya tenía y el
 fallo queda anotado en _site/robot-estado.json.
 
@@ -25,6 +28,7 @@ import unicodedata
 import urllib.error
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 RAIZ = Path(__file__).resolve().parent.parent
 SALIDA = RAIZ / "_site"
@@ -261,6 +265,18 @@ def volcar_textos(html_texto, textos):
 
 
 # ---------------------------------------------------------------- ediciones
+
+def marcar_listos():
+    """Tramitado → Listo en la BBDD Publicaciones si la fecha de publicación es hoy o ya pasó."""
+    hoy = dt.datetime.now(ZoneInfo("Europe/Madrid")).date().isoformat()
+    filas = consultar(DS_PUBLICACIONES, {"and": [
+        {"property": "Estado", "status": {"equals": "Tramitado"}},
+        {"property": "Fecha Publicación", "date": {"on_or_before": hoy}},
+    ]})
+    for f in filas:
+        notion(f"pages/{f['id']}", "PATCH", {"properties": {"Estado": {"status": {"name": "Listo"}}}})
+    return [valor_texto(f, "Tarea").strip() for f in filas]
+
 
 def ediciones_desde_substack():
     datos = json.loads(pedir(f"{SUBSTACK}/api/v1/archive?sort=new&limit=50", cabeceras={"Accept": "application/json"}))
@@ -509,6 +525,10 @@ def main():
     if de_notion:
         textos.update(de_notion)
         estado["textos"] = len(de_notion)
+
+    # 0. Publicaciones de hoy: Tramitado → Listo (solo en GitHub)
+    if os.environ.get("MARCAR_PUBLICADOS") == "si":
+        estado["marcados_listo"] = paso("marcar_listos", marcar_listos) or []
 
     # 2. Ediciones
     ediciones = paso("ediciones_substack", ediciones_desde_substack)
