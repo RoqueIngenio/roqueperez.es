@@ -517,6 +517,10 @@ def pagina_apunte(a, plantilla_blog):
     cabeza = re.sub(r"<title>.*?</title>", f"<title>{titulo} · Apuntes de planta · Roque Pérez</title>", cabeza)
     cabeza = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{descripcion}">', cabeza)
     cabeza = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{url}">', cabeza)
+    cabeza = cabeza.replace('<meta property="og:type" content="website">', '<meta property="og:type" content="article">')
+    cabeza = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{titulo}">', cabeza)
+    cabeza = re.sub(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{descripcion}">', cabeza)
+    cabeza = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', cabeza)
     cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
     pie = pie.replace('src="../', 'src="../../')
     cabeza = cabeza.replace('<a href="index.html">Apuntes de planta</a>', '<a href="../index.html">Apuntes de planta</a>')
@@ -623,6 +627,32 @@ def escribir_sitemap(apuntes):
                                        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + filas + "</urlset>\n")
 
 
+def pagina_404(plantilla_blog):
+    """Página de error con el diseño de la web. GitHub Pages la sirve en cualquier dirección que no exista."""
+    cabeza = plantilla_blog[: plantilla_blog.index("<main>")]
+    pie = plantilla_blog[plantilla_blog.index("</main>"):]
+    cabeza = re.sub(r"<title>.*?</title>", "<title>Página no encontrada · Roque Pérez Calvo</title>", cabeza)
+    cabeza = re.sub(r'\s*<link rel="canonical" href="[^"]*">', '\n  <meta name="robots" content="noindex">', cabeza)
+    cabeza = re.sub(r'\s*<meta (property="og:|name="twitter:)[^>]*>', "", cabeza)
+    cabeza = cabeza.replace('href="../', 'href="/').replace('src="../', 'src="/').replace('href="index.html"', 'href="/apuntes-de-planta/"')
+    cabeza = cabeza.replace('href="/index.html', 'href="/')
+    pie = pie.replace('src="../', 'src="/').replace('href="../', 'href="/').replace('href="/index.html', 'href="/')
+    cuerpo = """<main>
+    <section class="blog-vacio">
+      <div class="contenedor">
+        <span class="sello">Error 404</span>
+        <h1 style="font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; margin-bottom: 18px;">Esta página no está en la libreta</h1>
+        <p>Puede que la dirección esté mal escrita o que haya movido la página de sitio. Desde aquí puedes volver a lo importante.</p>
+        <div class="botones" style="justify-content: center;">
+          <a href="/" class="boton boton-principal">Ir al inicio →</a>
+          <a href="/apuntes-de-planta/" class="boton boton-secundario">Ver los apuntes</a>
+        </div>
+      </div>
+    </section>
+  """
+    return cabeza + cuerpo + pie
+
+
 def versionar_archivos():
     """Añade ?v=… a estilos.css, script.js y textos.js en todas las páginas, para que
     el navegador no use una copia antigua cuando cambian."""
@@ -700,6 +730,7 @@ def main():
     (SALIDA / "index.html").write_text(volcar_textos(portada, textos))
     (SALIDA / "apuntes-de-planta" / "index.html").write_text(volcar_textos(blog, textos))
     escribir_sitemap(apuntes)
+    (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
 
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":
         paso("marcar_publicados", lambda: marcar_publicados(apuntes))
