@@ -484,10 +484,12 @@ def apuntes_desde_notion():
     ]})
     apuntes = []
     for f in filas:
-        fecha = (valor_fecha(f, "Fecha programada") or valor_fecha(f, "Fecha de publicación")
-                 or f["created_time"][:10])
-        if fecha > hoy:
+        programada = (valor_fecha(f, "Fecha programada") or valor_fecha(f, "Fecha de publicación")
+                      or f["created_time"][:10])
+        if programada > hoy:
             continue  # programado para más adelante
+        # La fecha que se ve en la web es la del día en que se publicó de verdad
+        fecha = valor_fecha(f, "Publicado el") or hoy
         titulo = valor_texto(f, "Idea").strip()
         if not titulo:
             continue
@@ -606,7 +608,10 @@ def listado_apuntes(apuntes):
 def marcar_publicados(apuntes):
     for a in apuntes:
         if a["estado"] == "Aprobado":
-            notion(f"pages/{a['id']}", "PATCH", {"properties": {"Estado": {"status": {"name": "Publicado"}}}})
+            notion(f"pages/{a['id']}", "PATCH", {"properties": {
+                "Estado": {"status": {"name": "Publicado"}},
+                "Publicado el": {"date": {"start": a["fecha"]}},
+            }})
 
 
 def escribir_sitemap(apuntes):
