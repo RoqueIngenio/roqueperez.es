@@ -207,6 +207,29 @@ strong { font-weight: 700; }
 }
 .lecturas svg { flex-shrink: 0; width: 26px; height: 26px; color: var(--principal); }
 
+/* Mi estantería: los libros, como lomos sobre una balda */
+.estanteria {
+  margin-top: 22px; padding-bottom: 22px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  border-bottom: 4px solid var(--tinta);
+}
+.libro {
+  --lomo: var(--tinta-3);
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--blanco); border: 2px solid var(--tinta); border-left: 12px solid var(--lomo);
+  border-radius: 6px 14px 14px 6px; padding: 18px 20px;
+  transition: transform .2s, box-shadow .2s;
+}
+.libro:hover { transform: translateY(-4px); box-shadow: 5px 5px 0 var(--lomo); }
+.libro-lean-e-industria { --lomo: var(--principal); }
+.libro-desarrollo-personal { --lomo: var(--dorado); }
+.libro-filosofia { --lomo: var(--tinta); }
+.libro-dinero { --lomo: var(--verde); }
+.libro-categoria { font-family: var(--f-mono); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
+.libro h4 { font-family: var(--f-titulo); font-size: 1.2rem; line-height: 1.2; }
+.libro-autor { color: var(--tinta-2); font-size: .95rem; }
+.libro p { margin-top: 8px; color: var(--tinta-2); font-size: .95rem; font-style: italic; }
+
 /* El recorrido */
 .recorrido { position: relative; list-style: none; max-width: 860px; }
 .recorrido::before { content: ""; position: absolute; left: 150px; top: 8px; bottom: 8px; width: 2px; background: var(--tinta); }
@@ -305,8 +328,10 @@ strong { font-weight: 700; }
 }
 .tema:nth-child(odd) { transform: rotate(-1.5deg); }
 .tema:nth-child(even) { transform: rotate(1.5deg); }
-.canales { margin-top: 26px; display: flex; gap: 12px; align-items: center; font-family: var(--f-mono); font-size: 0.85rem; color: var(--tinta-2); }
+.canales { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-family: var(--f-mono); font-size: 0.85rem; color: var(--tinta-2); }
 .canales svg { width: 22px; height: 22px; }
+.canales a { display: inline-flex; align-items: center; gap: 8px; color: var(--verde); font-weight: 700; text-decoration: none; }
+.canales a:hover { text-decoration: underline; }
 
 /* Apuntes de planta */
 .apuntes {
@@ -371,7 +396,7 @@ strong { font-weight: 700; }
   .portada-texto { padding-bottom: 10px; }
   .portada-foto { max-width: 440px; margin: 0 auto; width: 100%; }
   .yo-foto { max-width: 380px; }
-  .pilares, .ediciones, .mochila { grid-template-columns: 1fr; }
+  .pilares, .ediciones, .mochila, .estanteria { grid-template-columns: 1fr; }
   .dinero { padding: 40px 28px; }
   .contacto-texto { padding-bottom: 0; }
   .contacto-foto { order: 2; }

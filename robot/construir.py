@@ -5,6 +5,7 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
 
   1. Textos de la web   ← Notion, "BBDD. Textos de la web"
   2. Últimas ediciones  ← Substack de Ingenio Lean
+  4. Mi estantería      ← Notion, "BBDD. Mi estantería" (los libros marcados como Visible)
   3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado
                           y cuya "Fecha programada" ya ha llegado)
 
@@ -44,6 +45,7 @@ NOTION_VERSION = "2025-09-03"
 DS_TEXTOS = "148e0594-5608-499f-bbf6-87f5bd99bae7"
 DS_APUNTES = "3f22a7a0-ee64-8050-8e95-000b911a2f83"
 DS_PUBLICACIONES = "19c2a7a0-ee64-81ce-843d-000b3b7817fa"
+DS_ESTANTERIA = "ee45a84e-3008-415a-b2a4-1899803e0a41"
 NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
 
@@ -381,6 +383,35 @@ def tarjetas_ediciones(ediciones):
     return '        <div class="ediciones">\n' + "\n".join(tarjetas) + "\n        </div>\n        "
 
 
+# ---------------------------------------------------------------- estantería
+
+def libros_desde_notion():
+    filas = consultar(DS_ESTANTERIA, {"property": "Visible", "checkbox": {"equals": True}})
+    libros = [{"titulo": valor_texto(f, "Libro").strip(), "autor": valor_texto(f, "Autor").strip(),
+               "categoria": (propiedad(f, "Categoría").get("select") or {}).get("name") or "",
+               "frase": valor_texto(f, "Por qué lo recomiendo").strip(),
+               "orden": propiedad(f, "Orden").get("number")} for f in filas]
+    libros = [l for l in libros if l["titulo"]]
+    libros.sort(key=lambda l: (l["orden"] is None, l["orden"] or 0, l["titulo"]))
+    if not libros:
+        raise RuntimeError("Notion no devolvió libros")
+    return libros
+
+
+def estanteria(libros):
+    tarjetas = []
+    for l in libros:
+        tarjetas.append(
+            f'          <article class="libro libro-{a_slug(l["categoria"]) or "otros"}">\n'
+            + (f'            <span class="libro-categoria">{html.escape(l["categoria"])}</span>\n' if l["categoria"] else "")
+            + f'            <h4>{html.escape(l["titulo"])}</h4>\n'
+            + (f'            <span class="libro-autor">{html.escape(l["autor"])}</span>\n' if l["autor"] else "")
+            + (f'            <p>{html.escape(l["frase"])}</p>\n' if l["frase"] else "")
+            + "          </article>"
+        )
+    return '        <div class="estanteria aparece">\n' + "\n".join(tarjetas) + "\n        </div>\n        "
+
+
 # ---------------------------------------------------------------- apuntes
 
 def bloques_a_html(bloques, carpeta_img, prefijo_img):
@@ -644,6 +675,12 @@ def main():
         textos["portada.nota-ediciones"] = f"**{total}** ediciones de Ingenio Lean"
         portada = reemplazar_entre(portada, "EDICIONES", tarjetas_ediciones(ediciones))
         estado["ediciones"] = total
+
+    # 4. Estantería
+    libros = paso("estanteria_notion", libros_desde_notion)
+    if libros:
+        portada = reemplazar_entre(portada, "ESTANTERIA", estanteria(libros))
+        estado["libros"] = len(libros)
 
     # 3. Apuntes
     apuntes = paso("apuntes_notion", apuntes_desde_notion) or []

@@ -97,7 +97,7 @@ Amor
 Cuidar mis relaciones y aprender a quererme a mí mismo. El más complejo de los tres.
 
 [pilares.libros]
-Y entre medias, libros. Mucha filosofía y mucho desarrollo personal. Pronto, aquí mismo, los que más me han ayudado.
+Y entre medias, libros. Mucha filosofía y mucho desarrollo personal. Estos son los que más me han ayudado.
 
 ## ================= EL RECORRIDO =================
 
