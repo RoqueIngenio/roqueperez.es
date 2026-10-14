@@ -507,7 +507,7 @@ def apuntes_desde_notion():
     return apuntes
 
 
-def pagina_apunte(a, plantilla_blog):
+def pagina_apunte(a, plantilla_blog, apuntes):
     """Usa la cabecera y el pie de la página del blog para mantener el diseño."""
     cabeza = plantilla_blog[: plantilla_blog.index("<main>")]
     pie = plantilla_blog[plantilla_blog.index("</main>"):]
@@ -553,10 +553,44 @@ def pagina_apunte(a, plantilla_blog):
           <p>Cada dos lunes envío una edición de Ingenio Lean con un problema real de planta, su causa raíz y una herramienta para aplicar.</p>
           <a class="boton boton-secundario" href="{SUBSTACK}" target="_blank" rel="noopener">Suscribirme gratis →</a>
         </aside>
+        {sigue_leyendo(a, apuntes)}
       </div>
     </article>
   """
     return cabeza + cuerpo + pie
+
+
+def tarjeta_apunte(a, prefijo=""):
+    """Tarjeta sencilla de un apunte, para la portada y para el «Sigue leyendo»."""
+    meta = " · ".join(x for x in [fecha_bonita(a["fecha"]), a["tema"]] if x)
+    return (f'          <a class="apunte-tarjeta" href="{prefijo}{a["slug"]}/">\n'
+            f'            <span class="etiqueta">{html.escape(meta)}</span>\n'
+            f'            <h3>{html.escape(a["titulo"])}</h3>\n'
+            + (f'            <p>{html.escape(a["resumen"])}</p>\n' if a["resumen"] else "")
+            + '            <span class="apunte-leer">Leer el apunte →</span>\n'
+            "          </a>")
+
+
+def ultimos_apuntes(apuntes):
+    """Los tres últimos apuntes, para la portada."""
+    return ('        <div class="ultimos-apuntes aparece">\n'
+            '          <div class="ultimos-titulo"><h3>Los últimos apuntes</h3>'
+            '<a href="apuntes-de-planta/index.html">Ver todos →</a></div>\n'
+            '          <div class="apuntes-rejilla apuntes-rejilla-3">\n'
+            + "\n".join(tarjeta_apunte(a, "apuntes-de-planta/") for a in apuntes[:3])
+            + "\n          </div>\n        </div>\n        ")
+
+
+def sigue_leyendo(a, apuntes):
+    """Dos apuntes más para el final de cada apunte: primero los del mismo tema, luego los más recientes."""
+    otros = [o for o in apuntes if o["slug"] != a["slug"]]
+    otros.sort(key=lambda o: (o["tema"] != a["tema"],))  # orden estable: conserva «más recientes primero»
+    if not otros:
+        return ""
+    return ('<aside class="apunte-mas">\n          <h2>Sigue leyendo</h2>\n'
+            '          <div class="apuntes-rejilla">\n'
+            + "\n".join(tarjeta_apunte(o, "../") for o in otros[:2])
+            + "\n          </div>\n        </aside>")
 
 
 def para_buscar(texto):
@@ -721,9 +755,10 @@ def main():
     apuntes = paso("apuntes_notion", apuntes_desde_notion) or []
     for a in apuntes:
         a["carpeta"].mkdir(parents=True, exist_ok=True)
-        (a["carpeta"] / "index.html").write_text(volcar_textos(pagina_apunte(a, blog), textos))
+        (a["carpeta"] / "index.html").write_text(volcar_textos(pagina_apunte(a, blog, apuntes), textos))
     if apuntes:
         blog = reemplazar_entre(blog, "APUNTES", listado_apuntes(apuntes))
+        portada = reemplazar_entre(portada, "ULTIMOS", ultimos_apuntes(apuntes))
     estado["apuntes"] = [a["slug"] for a in apuntes]
 
     escribir_textos_js(textos)

@@ -439,6 +439,19 @@ strong { font-weight: 700; }
 .blog-listado { padding: 70px 0 110px; }
 .apuntes-rejilla { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .apunte-tarjeta[hidden] { display: none; }
+.apuntes-rejilla-3 { grid-template-columns: repeat(3, 1fr); }
+.apunte-tarjeta h3 { font-size: 1.3rem; line-height: 1.2; }
+
+/* Portada: los últimos apuntes */
+.ultimos-apuntes { margin-top: 70px; }
+.ultimos-titulo { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 24px; }
+.ultimos-titulo h3 { font-size: 1.5rem; }
+.ultimos-titulo a { color: var(--principal); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.ultimos-titulo a:hover { text-decoration: underline; }
+
+/* Final de cada apunte: sigue leyendo */
+.apunte-mas { margin-top: 60px; padding-top: 40px; border-top: 2px dashed var(--linea); }
+.apunte-mas h2 { font-size: 1.6rem; margin-bottom: 22px; }
 
 /* Buscador de apuntes: campo de texto + píldoras de tema */
 .buscador { margin-bottom: 44px; }
@@ -512,7 +525,7 @@ strong { font-weight: 700; }
 .apunte-suscripcion p { color: var(--tinta-2); margin-bottom: 20px; }
 
 @media (max-width: 760px) {
-  .apuntes-rejilla { grid-template-columns: 1fr; }
+  .apuntes-rejilla, .apuntes-rejilla-3 { grid-template-columns: 1fr; }
   .buscador-campo input { padding: 15px 18px; }
   .apunte-edicion, .apunte-suscripcion { padding: 24px 20px; }
 }
