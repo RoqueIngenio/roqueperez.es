@@ -677,7 +677,7 @@ def main():
         ediciones = paso("ediciones_notion", ediciones_desde_notion)
     if ediciones:
         total = max(numero_edicion(e["titulo"]) for e in ediciones)  # el feed solo trae las 20 últimas
-        textos["portada.nota-ediciones"] = f"**{total}** ediciones de Ingenio Lean"
+        textos["portada.nota-ediciones"] = f"**{total} ediciones** de Ingenio Lean"
         portada = reemplazar_entre(portada, "EDICIONES", tarjetas_ediciones(ediciones))
         estado["ediciones"] = total
 

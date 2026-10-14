@@ -47,7 +47,7 @@ Suscríbete a Ingenio Lean →
 **+7 años** a pie de planta
 
 [portada.nota-ediciones]
-**20** ediciones de Ingenio Lean
+**21 ediciones** de Ingenio Lean
 
 [portada.nota-amarilla]
 mejora continua · mentalidad · industria
