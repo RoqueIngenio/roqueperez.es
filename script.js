@@ -117,7 +117,7 @@ if (buscador) {
     let visibles = 0;
     tarjetas.forEach((tarjeta) => {
       const coincide =
-        (!tema || tarjeta.dataset.tema === tema) &&
+        (!tema || tarjeta.dataset.tema.split(" ").includes(tema)) &&
         palabras.every((p) => tarjeta.dataset.buscar.includes(p));
       tarjeta.hidden = !coincide;
       if (coincide) visibles++;

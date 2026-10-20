@@ -494,13 +494,16 @@ def apuntes_desde_notion():
         if not titulo:
             continue
         slug = a_slug(valor_texto(f, "Dirección web").strip() or titulo)
-        tema = (propiedad(f, "Tema").get("select") or {}).get("name")
+        p_tema = propiedad(f, "Tema")  # admite selección única o múltiple
+        temas = ([o["name"] for o in p_tema.get("multi_select") or []]
+                 or ([p_tema["select"]["name"]] if p_tema.get("select") else []))
+        tema = " · ".join(temas)
         resumen = valor_texto(f, "Resumen para Google").strip()
         enlace, titulo_edicion = edicion_relacionada(f)
         carpeta = SALIDA / "apuntes-de-planta" / slug
         cuerpo = bloques_a_html(hijos(f["id"]), carpeta / "img", slug)
         apuntes.append({"id": f["id"], "estado": (propiedad(f, "Estado").get("status") or {}).get("name"),
-                        "titulo": titulo, "slug": slug, "fecha": fecha, "tema": tema,
+                        "titulo": titulo, "slug": slug, "fecha": fecha, "tema": tema, "temas": temas,
                         "resumen": resumen, "enlace": enlace, "titulo_edicion": titulo_edicion,
                         "cuerpo": cuerpo, "carpeta": carpeta})
     apuntes.sort(key=lambda a: a["fecha"], reverse=True)
@@ -584,7 +587,7 @@ def ultimos_apuntes(apuntes):
 def sigue_leyendo(a, apuntes):
     """Dos apuntes más para el final de cada apunte: primero los del mismo tema, luego los más recientes."""
     otros = [o for o in apuntes if o["slug"] != a["slug"]]
-    otros.sort(key=lambda o: (o["tema"] != a["tema"],))  # orden estable: conserva «más recientes primero»
+    otros.sort(key=lambda o: (not set(o["temas"]) & set(a["temas"]),))  # orden estable: conserva «más recientes primero»
     if not otros:
         return ""
     return ('<aside class="apunte-mas">\n          <h2>Sigue leyendo</h2>\n'
@@ -599,16 +602,21 @@ def para_buscar(texto):
     return "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn").lower()
 
 
+def clave_tema(tema):
+    """«Mejora continua» → «mejora-continua»: una palabra por tema, para el filtro del buscador."""
+    return re.sub(r"\s+", "-", para_buscar(tema).strip())
+
+
 def listado_apuntes(apuntes):
     tarjetas, temas = [], {}
     for a in apuntes:
         meta = " · ".join(x for x in [fecha_bonita(a["fecha"]), a["tema"]] if x)
-        if a["tema"]:
-            temas[a["tema"]] = temas.get(a["tema"], 0) + 1
+        for t in a["temas"]:
+            temas[t] = temas.get(t, 0) + 1
         subtitulos = " ".join(re.sub(r"<[^>]+>", "", h) for h in re.findall(r"<h[23]>(.*?)</h[23]>", a["cuerpo"], re.S))
         buscar = para_buscar(html.unescape(" ".join([a["titulo"], a["resumen"], a["tema"] or "", subtitulos])))
         tarjetas.append(
-            f'          <a class="apunte-tarjeta" href="{a["slug"]}/" data-tema="{html.escape(para_buscar(a["tema"]))}"'
+            f'          <a class="apunte-tarjeta" href="{a["slug"]}/" data-tema="{html.escape(" ".join(clave_tema(t) for t in a["temas"]))}"'
             f' data-buscar="{html.escape(buscar)}">\n'
             f'            <span class="etiqueta">{html.escape(meta)}</span>\n'
             f'            <h2>{html.escape(a["titulo"])}</h2>\n'
@@ -617,7 +625,7 @@ def listado_apuntes(apuntes):
             "          </a>"
         )
     filtros = [f'<button type="button" class="filtro activo" data-tema="" aria-pressed="true">Todos <span>{len(apuntes)}</span></button>']
-    filtros += [f'<button type="button" class="filtro" data-tema="{html.escape(para_buscar(t))}" aria-pressed="false">'
+    filtros += [f'<button type="button" class="filtro" data-tema="{html.escape(clave_tema(t))}" aria-pressed="false">'
                 f'{html.escape(t)} <span>{n}</span></button>' for t, n in sorted(temas.items())]
     buscador = (
         '        <div class="buscador" data-buscador>\n'
