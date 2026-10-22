@@ -540,6 +540,8 @@ strong { font-weight: 700; }
 .herramienta-intro h1 { font-size: clamp(2.2rem, 5.2vw, 3.6rem); font-weight: 800; margin-bottom: 18px; max-width: 820px; }
 .herramienta-intro .entradilla { max-width: 680px; }
 .herramienta-cuerpo { padding-bottom: 50px; }
+.descarga-vista { margin: 0 0 34px; max-width: 980px; }
+.descarga-vista img { width: 100%; height: auto; border: 2px solid var(--tinta); border-radius: 12px; background: #fff; box-shadow: 8px 8px 0 var(--papel-2); }
 .descarga { background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 32px; box-shadow: 8px 8px 0 var(--dorado); max-width: 760px; }
 .descarga .botones { margin-top: 0; }
 .descarga-nota { margin-top: 18px; color: var(--tinta-3); font-size: .95rem; }

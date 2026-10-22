@@ -5,8 +5,8 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
 
   1. Textos de la web   ← Notion, "BBDD. Textos de la web"
   2. Últimas ediciones  ← Substack de Ingenio Lean
-  5. Herramientas       ← Notion, "BBDD. Herramientas" (las que están en Publicado) + el código de
-                          las calculadoras en herramientas-codigo/<dirección>/herramienta.html
+  5. Herramientas       ← Notion, "BBDD. Herramientas" (las que están en Publicado) + la carpeta
+                          herramientas/<dirección>/ (herramienta.html, descargas/ y compartir.png)
   4. Mi estantería      ← Notion, "BBDD. Mi estantería" (los libros marcados como Visible)
   3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado
                           y cuya "Fecha programada" ya ha llegado)
@@ -50,7 +50,7 @@ DS_APUNTES = "3f22a7a0-ee64-8050-8e95-000b911a2f83"
 DS_PUBLICACIONES = "19c2a7a0-ee64-81ce-843d-000b3b7817fa"
 DS_ESTANTERIA = "ee45a84e-3008-415a-b2a4-1899803e0a41"
 DS_HERRAMIENTAS = "05a9d069-733a-4681-a6ae-7c109803420d"
-CODIGO_HERRAMIENTAS = RAIZ / "herramientas-codigo"
+CODIGO_HERRAMIENTAS = RAIZ / "herramientas"  # una carpeta por herramienta: herramienta.html, descargas/, vista-previa.jpg, compartir.png
 NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
 
@@ -751,7 +751,7 @@ def herramientas_desde_notion():
 
 def preparar_herramienta(h):
     """Deja en _site/herramientas/<dirección>/ lo que necesita la ficha: el código de la calculadora
-    o los archivos descargados de Notion. Devuelve el HTML que va en el cuerpo de la ficha."""
+    o los archivos para descargar. Devuelve el HTML que va en el cuerpo de la ficha."""
     carpeta = SALIDA / "herramientas" / h["slug"]
     carpeta.mkdir(parents=True, exist_ok=True)
     origen = CODIGO_HERRAMIENTAS / h["slug"]
@@ -764,17 +764,38 @@ def preparar_herramienta(h):
         if not codigo.exists():
             raise RuntimeError(f"falta {codigo.relative_to(RAIZ)}")
         return codigo.read_text()
-    if not h["archivos"]:
-        raise RuntimeError("no tiene ningún archivo en la propiedad Archivo")
+    # Descargables: primero los de la carpeta descargas/ del repositorio; si no hay, los de Notion
+    descargas = []
+    if (origen / "descargas").is_dir():
+        for f in sorted((origen / "descargas").iterdir()):
+            if f.is_file() and not f.name.startswith("."):
+                shutil.copy(f, carpeta / f.name)
+                descargas.append((f.name, f.stat().st_size))
+    else:
+        for a in h["archivos"]:
+            nombre = re.sub(r"[^\w.\-]+", "-", unicodedata.normalize("NFKD", a["nombre"]).encode("ascii", "ignore").decode()).strip("-").lower() or "archivo"
+            datos = urllib.request.urlopen(urllib.request.Request(a["url"], headers={"User-Agent": NAVEGADOR}), timeout=60).read()
+            (carpeta / nombre).write_bytes(datos)
+            descargas.append((nombre, len(datos)))
+    if not descargas:
+        raise RuntimeError("no tiene archivos: ni en descargas/ ni en la propiedad Archivo de Notion")
+    formatos = {"PDF": "PDF", "PPTX": "PowerPoint editable", "PPT": "PowerPoint editable", "XLSX": "Excel editable",
+                "XLS": "Excel editable", "DOCX": "Word editable", "DOC": "Word editable", "ZIP": "ZIP"}
+    descargas.sort(key=lambda d: (not d[0].lower().endswith(".pdf"), d[0]))  # el PDF, primero
     botones = []
-    for a in h["archivos"]:
-        nombre = re.sub(r"[^\w.\-]+", "-", unicodedata.normalize("NFKD", a["nombre"]).encode("ascii", "ignore").decode()).strip("-") or "archivo"
-        datos = urllib.request.urlopen(urllib.request.Request(a["url"], headers={"User-Agent": NAVEGADOR}), timeout=60).read()
-        (carpeta / nombre).write_bytes(datos)
-        ext = nombre.rsplit(".", 1)[-1].upper() if "." in nombre else h["tipo"]
-        botones.append(f'<a class="boton boton-principal" href="{html.escape(nombre)}" download '
-                       f'data-goatcounter-click="descarga-{h["slug"]}">Descargar gratis · {ext}, {tamano_bonito(len(datos))} ↓</a>')
-    return ('<div class="descarga">\n  <div class="botones">' + "".join(botones) + "</div>\n"
+    for i, (nombre, tam) in enumerate(descargas):
+        ext = nombre.rsplit(".", 1)[-1].upper() if "." in nombre else ""
+        clase = "boton-principal" if i == 0 else "boton-secundario"
+        botones.append(f'<a class="boton {clase}" href="{html.escape(nombre)}" download '
+                       f'data-goatcounter-click="descarga-{h["slug"]}-{ext.lower() or "archivo"}">'
+                       f'Descargar {formatos.get(ext, ext)} · {tamano_bonito(tam)} ↓</a>')
+    vista = ""
+    imagen_vista = next((origen / n for n in ("vista-previa.jpg", "vista-previa.png") if (origen / n).exists()), None)
+    if imagen_vista:  # imagen de cómo es el documento, antes de descargarlo
+        shutil.copy(imagen_vista, carpeta / imagen_vista.name)
+        vista = (f'<figure class="descarga-vista"><img src="{imagen_vista.name}" alt="Vista previa: {html.escape(h["nombre"])}" '
+                 f'loading="lazy" width="1400"></figure>\n')
+    return (vista + '<div class="descarga">\n  <div class="botones">' + "".join(botones) + "</div>\n"
             '  <p class="descarga-nota">Gratis y sin registro. Si te resulta útil, compártelo con quien le pueda servir.</p>\n</div>')
 
 
@@ -936,7 +957,11 @@ def paso(nombre, funcion):
 def main():
     if SALIDA.exists():
         shutil.rmtree(SALIDA)
-    shutil.copytree(RAIZ, SALIDA, ignore=shutil.ignore_patterns(".*", "_site", "robot", "herramientas-codigo"))
+    shutil.copytree(RAIZ, SALIDA, ignore=shutil.ignore_patterns(".*", "_site", "robot"))
+    # Las carpetas de cada herramienta solo se publican si están en Publicado: las monta el robot más abajo
+    for carpeta in (SALIDA / "herramientas").iterdir():
+        if carpeta.is_dir():
+            shutil.rmtree(carpeta)
 
     portada = (SALIDA / "index.html").read_text()
     blog = (SALIDA / "apuntes-de-planta" / "index.html").read_text()
