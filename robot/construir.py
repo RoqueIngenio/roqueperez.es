@@ -5,6 +5,8 @@ Copia la web a _site/ y, encima, mete el contenido vivo:
 
   1. Textos de la web   ← Notion, "BBDD. Textos de la web"
   2. Últimas ediciones  ← Substack de Ingenio Lean
+  5. Herramientas       ← Notion, "BBDD. Herramientas" (las que están en Publicado) + el código de
+                          las calculadoras en herramientas-codigo/<dirección>/herramienta.html
   4. Mi estantería      ← Notion, "BBDD. Mi estantería" (los libros marcados como Visible)
   3. Apuntes de planta  ← Notion, "BBDD. Apuntes de planta" (los que están en Aprobado o Publicado
                           y cuya "Fecha programada" ya ha llegado)
@@ -30,6 +32,7 @@ import sys
 import traceback
 import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
@@ -46,6 +49,8 @@ DS_TEXTOS = "148e0594-5608-499f-bbf6-87f5bd99bae7"
 DS_APUNTES = "3f22a7a0-ee64-8050-8e95-000b911a2f83"
 DS_PUBLICACIONES = "19c2a7a0-ee64-81ce-843d-000b3b7817fa"
 DS_ESTANTERIA = "ee45a84e-3008-415a-b2a4-1899803e0a41"
+DS_HERRAMIENTAS = "05a9d069-733a-4681-a6ae-7c109803420d"
+CODIGO_HERRAMIENTAS = RAIZ / "herramientas-codigo"
 NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
 
@@ -660,10 +665,11 @@ def marcar_publicados(apuntes):
             }})
 
 
-def escribir_sitemap(apuntes):
+def escribir_sitemap(apuntes, herramientas):
     hoy = dt.date.today().isoformat()
-    urls = [(f"{DOMINIO}/", hoy), (f"{DOMINIO}/apuntes-de-planta/", hoy)]
+    urls = [(f"{DOMINIO}/", hoy), (f"{DOMINIO}/apuntes-de-planta/", hoy), (f"{DOMINIO}/herramientas/", hoy)]
     urls += [(f"{DOMINIO}/apuntes-de-planta/{a['slug']}/", a["fecha"]) for a in apuntes]
+    urls += [(f"{DOMINIO}/herramientas/{h['slug']}/", h["fecha"]) for h in herramientas]
     filas = "".join(f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{f}</lastmod>\n  </url>\n" for u, f in urls)
     (SALIDA / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n'
                                        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + filas + "</urlset>\n")
@@ -707,6 +713,206 @@ def versionar_archivos():
             pagina.write_text(nuevo)
 
 
+# ---------------------------------------------------------------- herramientas
+
+TIPOS_DESCARGA = ("PDF", "Plantilla", "Programa")
+
+
+def tamano_bonito(n):
+    return f"{n / 1024 / 1024:.1f} MB".replace(".", ",") if n >= 1024 * 1024 else f"{max(1, round(n / 1024))} KB"
+
+
+def herramientas_desde_notion():
+    filas = consultar(DS_HERRAMIENTAS, {"property": "Estado", "select": {"equals": "Publicado"}})
+    herramientas = []
+    for f in filas:
+        nombre = valor_texto(f, "Nombre").strip()
+        if not nombre:
+            continue
+        tipo = (propiedad(f, "Tipo").get("select") or {}).get("name") or "Calculadora"
+        slug = a_slug(valor_texto(f, "Dirección web").strip() or nombre)
+        enlace, titulo_edicion = edicion_relacionada(f)
+        archivos = []
+        for a in propiedad(f, "Archivo").get("files") or []:
+            url = (a.get("file") or a.get("external") or {}).get("url")
+            if url:
+                archivos.append({"nombre": a.get("name") or "archivo", "url": url})
+        herramientas.append({
+            "nombre": nombre, "tipo": tipo, "slug": slug,
+            "descripcion": valor_texto(f, "Descripción").strip(),
+            "destacada": bool(propiedad(f, "Destacada").get("checkbox")),
+            "orden": propiedad(f, "Orden").get("number"),
+            "fecha": valor_fecha(f, "Última revisión") or f["last_edited_time"][:10],
+            "enlace": enlace, "titulo_edicion": titulo_edicion, "archivos": archivos,
+        })
+    herramientas.sort(key=lambda h: (h["orden"] is None, h["orden"] or 0, h["nombre"]))
+    return herramientas
+
+
+def preparar_herramienta(h):
+    """Deja en _site/herramientas/<dirección>/ lo que necesita la ficha: el código de la calculadora
+    o los archivos descargados de Notion. Devuelve el HTML que va en el cuerpo de la ficha."""
+    carpeta = SALIDA / "herramientas" / h["slug"]
+    carpeta.mkdir(parents=True, exist_ok=True)
+    origen = CODIGO_HERRAMIENTAS / h["slug"]
+    h["imagen"] = None
+    if (origen / "compartir.png").exists():
+        shutil.copy(origen / "compartir.png", carpeta / "compartir.png")
+        h["imagen"] = f"{DOMINIO}/herramientas/{h['slug']}/compartir.png"
+    if h["tipo"] not in TIPOS_DESCARGA:
+        codigo = origen / "herramienta.html"
+        if not codigo.exists():
+            raise RuntimeError(f"falta {codigo.relative_to(RAIZ)}")
+        return codigo.read_text()
+    if not h["archivos"]:
+        raise RuntimeError("no tiene ningún archivo en la propiedad Archivo")
+    botones = []
+    for a in h["archivos"]:
+        nombre = re.sub(r"[^\w.\-]+", "-", unicodedata.normalize("NFKD", a["nombre"]).encode("ascii", "ignore").decode()).strip("-") or "archivo"
+        datos = urllib.request.urlopen(urllib.request.Request(a["url"], headers={"User-Agent": NAVEGADOR}), timeout=60).read()
+        (carpeta / nombre).write_bytes(datos)
+        ext = nombre.rsplit(".", 1)[-1].upper() if "." in nombre else h["tipo"]
+        botones.append(f'<a class="boton boton-principal" href="{html.escape(nombre)}" download '
+                       f'data-goatcounter-click="descarga-{h["slug"]}">Descargar gratis · {ext}, {tamano_bonito(len(datos))} ↓</a>')
+    return ('<div class="descarga">\n  <div class="botones">' + "".join(botones) + "</div>\n"
+            '  <p class="descarga-nota">Gratis y sin registro. Si te resulta útil, compártelo con quien le pueda servir.</p>\n</div>')
+
+
+def pagina_herramienta(h, cuerpo_herramienta, plantilla):
+    """Ficha de una herramienta con la cabecera y el pie de la biblioteca."""
+    cabeza = plantilla[: plantilla.index("<main>")]
+    pie = plantilla[plantilla.index("</main>"):]
+    nombre = html.escape(h["nombre"])
+    descripcion = html.escape(h["descripcion"] or h["nombre"])
+    url = f"{DOMINIO}/herramientas/{h['slug']}/"
+    cabeza = re.sub(r"<title>.*?</title>", f"<title>{nombre} · Herramientas · Roque Pérez</title>", cabeza)
+    cabeza = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{descripcion}">', cabeza)
+    cabeza = re.sub(r'<link rel="canonical" href="[^"]*">', f'<link rel="canonical" href="{url}">', cabeza)
+    cabeza = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{nombre}">', cabeza)
+    cabeza = re.sub(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{descripcion}">', cabeza)
+    cabeza = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', cabeza)
+    if h["imagen"]:
+        cabeza = re.sub(r'<meta property="og:image" content="[^"]*">', f'<meta property="og:image" content="{h["imagen"]}">', cabeza)
+    cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
+    cabeza = cabeza.replace('<a href="index.html">Herramientas</a>', '<a href="../index.html">Herramientas</a>')
+    pie = pie.replace('src="../', 'src="../../')
+    datos_google = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "WebApplication" if h["tipo"] not in TIPOS_DESCARGA else "CreativeWork",
+        "name": h["nombre"], "description": h["descripcion"], "url": url, "inLanguage": "es",
+        "isAccessibleForFree": True, "dateModified": h["fecha"],
+        "author": {"@type": "Person", "name": "Roque Pérez Calvo", "url": f"{DOMINIO}/"},
+    }, ensure_ascii=False)
+    cabeza = cabeza.replace("</head>", f'  <script type="application/ld+json">{datos_google}</script>\n</head>')
+
+    num = numero_edicion(h["titulo_edicion"] or "")
+    if h["enlace"]:
+        texto_edicion = (f'En <strong>{html.escape(h["titulo_edicion"] or "esta edición")}</strong> lo cuento a fondo. '
+                         'Y cada dos lunes, a las 7:00, un problema real de planta, su causa raíz y una herramienta para aplicarla ese mismo lunes.')
+        boton_edicion = f'<a class="boton boton-secundario" href="{html.escape(h["enlace"])}" target="_blank" rel="noopener">Leer la edición{f" #{num}" if num else ""}</a>'
+    else:
+        texto_edicion = "Cada dos lunes, a las 7:00, un problema real de planta, su causa raíz y una herramienta para aplicarla ese mismo lunes."
+        boton_edicion = ""
+    q = urllib.parse.quote
+    compartir = (f'<div class="compartir-redes">\n'
+                 f'          <span>Compártela:</span>\n'
+                 f'          <a href="https://www.linkedin.com/sharing/share-offsite/?url={q(url, safe="")}" target="_blank" rel="noopener" data-goatcounter-click="compartir-linkedin-{h["slug"]}">LinkedIn</a>\n'
+                 f'          <a href="https://wa.me/?text={q(h["nombre"] + " " + url, safe="")}" target="_blank" rel="noopener" data-goatcounter-click="compartir-whatsapp-{h["slug"]}">WhatsApp</a>\n'
+                 f'          <button type="button" data-copiar-enlace="{url}">Copiar enlace</button>\n'
+                 f'        </div>')
+    cuerpo = f"""<main>
+    <section class="herramienta-intro">
+      <div class="contenedor">
+        <a class="apunte-volver" href="../index.html">← Todas las herramientas</a>
+        <p class="etiqueta">Herramienta gratuita · {html.escape(h["tipo"])}</p>
+        <h1>{nombre}</h1>
+        {f'<p class="entradilla">{descripcion}</p>' if h["descripcion"] else ""}
+      </div>
+    </section>
+    <section class="herramienta-cuerpo">
+      <div class="contenedor">
+{cuerpo_herramienta}
+      </div>
+    </section>
+    <section class="herramienta-cierre">
+      <div class="contenedor">
+        <div class="herramienta-cierre-texto">
+          <span class="etiqueta">Ingenio Lean{f" · #{num}" if num else ""}</span>
+          <h2>¿Y ahora qué hago con esto?</h2>
+          <p>{texto_edicion}</p>
+        </div>
+        <div class="botones">
+          {boton_edicion}
+          <a class="boton boton-principal" href="{SUBSTACK}" target="_blank" rel="noopener">Suscríbete a Ingenio Lean →</a>
+        </div>
+        {compartir}
+      </div>
+    </section>
+  """
+    return cabeza + cuerpo + pie
+
+
+def listado_herramientas(herramientas):
+    tarjetas, tipos = [], {}
+    for h in herramientas:
+        tipos[h["tipo"]] = tipos.get(h["tipo"], 0) + 1
+        accion = "Descargar gratis →" if h["tipo"] in TIPOS_DESCARGA else "Usar gratis →"
+        buscar = para_buscar(" ".join([h["nombre"], h["descripcion"], h["tipo"]]))
+        tarjetas.append(
+            f'          <a class="apunte-tarjeta herramienta-tarjeta" href="{h["slug"]}/" data-tema="{clave_tema(h["tipo"])}" data-buscar="{html.escape(buscar)}">\n'
+            f'            <span class="etiqueta">{html.escape(h["tipo"])}</span>\n'
+            f'            <h2>{html.escape(h["nombre"])}</h2>\n'
+            + (f'            <p>{html.escape(h["descripcion"])}</p>\n' if h["descripcion"] else "")
+            + f'            <span class="apunte-leer">{accion}</span>\n'
+            "          </a>"
+        )
+    filtros = ""
+    if len(tipos) > 1:
+        botones = [f'<button type="button" class="filtro activo" data-tema="" aria-pressed="true">Todas <span>{len(herramientas)}</span></button>']
+        botones += [f'<button type="button" class="filtro" data-tema="{clave_tema(t)}" aria-pressed="false">{html.escape(t)} <span>{n}</span></button>'
+                    for t, n in sorted(tipos.items())]
+        filtros = ('          <div class="buscador-temas" role="group" aria-label="Filtrar por tipo">\n            '
+                   + "\n            ".join(botones) + "\n          </div>\n")
+    buscador = (
+        '        <div class="buscador" data-buscador data-unidad="herramienta">\n'
+        '          <label class="buscador-campo">\n'
+        '            <span class="etiqueta">Buscar una herramienta</span>\n'
+        '            <input type="search" placeholder="reuniones, costes, plantilla…" autocomplete="off" spellcheck="false">\n'
+        '          </label>\n' + filtros +
+        '          <p class="buscador-cuenta" aria-live="polite"></p>\n'
+        '        </div>\n'
+    )
+    vacio = (
+        '        <div class="buscador-vacio" hidden>\n'
+        '          <span class="sello">Sin resultados</span>\n'
+        '          <p>Todavía no tengo ninguna herramienta sobre eso. Prueba con otra palabra.</p>\n'
+        '          <button type="button" class="boton boton-secundario" data-limpiar>Ver todas las herramientas</button>\n'
+        '        </div>\n'
+    )
+    return ('    <section class="blog-listado">\n      <div class="contenedor">\n' + buscador
+            + '        <div class="apuntes-rejilla">\n' + "\n".join(tarjetas) + "\n        </div>\n" + vacio
+            + "      </div>\n    </section>\n    ")
+
+
+def herramientas_portada(herramientas):
+    """Bloque de herramientas destacadas en la sección de Ingenio Lean de la portada."""
+    destacadas = [h for h in herramientas if h["destacada"]][:3]
+    if not destacadas:
+        return "        "
+    tarjetas = "\n".join(
+        f'          <a class="edicion herramienta-portada aparece" href="herramientas/{h["slug"]}/">\n'
+        f'            <span class="herramienta-portada-tipo">{html.escape(h["tipo"])} gratuita</span>\n'
+        f'            <h4>{html.escape(h["nombre"])}</h4>\n'
+        + (f'            <p>{html.escape(h["descripcion"])}</p>\n' if h["descripcion"] else "")
+        + f'            <span class="edicion-fecha">{"Descargar →" if h["tipo"] in TIPOS_DESCARGA else "Usar gratis →"}</span>\n'
+        "          </a>" for h in destacadas)
+    return ('        <div class="ediciones-titulo aparece herramientas-portada-titulo">\n'
+            '          <h3 data-texto="lean.herramientas-titulo">Herramientas gratuitas</h3>\n'
+            '          <a href="herramientas/index.html" data-texto="lean.herramientas-enlace">Ver todas →</a>\n'
+            '        </div>\n'
+            '        <div class="ediciones">\n' + tarjetas + "\n        </div>\n        ")
+
+
 # ---------------------------------------------------------------- principal
 
 def paso(nombre, funcion):
@@ -724,7 +930,7 @@ def paso(nombre, funcion):
 def main():
     if SALIDA.exists():
         shutil.rmtree(SALIDA)
-    shutil.copytree(RAIZ, SALIDA, ignore=shutil.ignore_patterns(".*", "_site", "robot"))
+    shutil.copytree(RAIZ, SALIDA, ignore=shutil.ignore_patterns(".*", "_site", "robot", "herramientas-codigo"))
 
     portada = (SALIDA / "index.html").read_text()
     blog = (SALIDA / "apuntes-de-planta" / "index.html").read_text()
@@ -769,10 +975,29 @@ def main():
         portada = reemplazar_entre(portada, "ULTIMOS", ultimos_apuntes(apuntes))
     estado["apuntes"] = [a["slug"] for a in apuntes]
 
+    # 5. Herramientas
+    plantilla_herr = (SALIDA / "herramientas" / "index.html").read_text()
+    herramientas, publicadas = paso("herramientas_notion", herramientas_desde_notion) or [], []
+    for h in herramientas:
+        try:
+            cuerpo_h = preparar_herramienta(h)
+        except Exception as e:  # una herramienta rota no tumba las demás
+            estado.setdefault("herramientas_errores", {})[h["slug"]] = str(e)
+            shutil.rmtree(SALIDA / "herramientas" / h["slug"], ignore_errors=True)
+            continue
+        (SALIDA / "herramientas" / h["slug"] / "index.html").write_text(
+            volcar_textos(pagina_herramienta(h, cuerpo_h, plantilla_herr), textos))
+        publicadas.append(h)
+    if publicadas:
+        plantilla_herr = reemplazar_entre(plantilla_herr, "HERRAMIENTAS", listado_herramientas(publicadas))
+    portada = reemplazar_entre(portada, "HERRAMIENTAS-PORTADA", herramientas_portada(publicadas))
+    estado["herramientas"] = [h["slug"] for h in publicadas]
+
     escribir_textos_js(textos)
     (SALIDA / "index.html").write_text(volcar_textos(portada, textos))
     (SALIDA / "apuntes-de-planta" / "index.html").write_text(volcar_textos(blog, textos))
-    escribir_sitemap(apuntes)
+    (SALIDA / "herramientas" / "index.html").write_text(volcar_textos(plantilla_herr, textos))
+    escribir_sitemap(apuntes, publicadas)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
 
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":

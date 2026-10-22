@@ -345,4 +345,25 @@ Los primeros apuntes están en la libreta. Mientras tanto, tienes todas las edic
 
 [blog.boton]
 Leer Ingenio Lean →
+
+[herramientas.etiqueta]
+Gratis · Ingenio Lean
+
+[herramientas.titulo]
+Herramientas
+
+[herramientas.intro]
+Calculadoras, plantillas y guías para que tu fábrica funcione mejor. Gratis, sin registro y listas para usar hoy mismo.
+
+[herramientas.sello]
+En el taller
+
+[herramientas.texto-vacio]
+Las primeras herramientas están en el banco de trabajo. Mientras tanto, tienes todas las ediciones de la newsletter esperándote.
+
+[lean.herramientas-titulo]
+Herramientas gratuitas
+
+[lean.herramientas-enlace]
+Ver todas →
 `;

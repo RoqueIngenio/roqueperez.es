@@ -304,6 +304,11 @@ strong { font-weight: 700; }
 .edicion h4 { font-family: var(--f-titulo); font-size: 1.25rem; line-height: 1.25; margin-bottom: 8px; }
 .edicion p { color: rgba(242, 239, 225, 0.65); font-size: 0.95rem; font-style: italic; }
 .edicion-fecha { margin-top: auto; padding-top: 16px; font-family: var(--f-mono); font-size: 0.75rem; color: rgba(242, 239, 225, 0.5); }
+.herramientas-portada-titulo { margin-top: 70px; }
+.herramienta-portada { background: rgba(224, 186, 91, 0.08); border-color: rgba(224, 186, 91, 0.45); min-height: 0; }
+.herramienta-portada-tipo { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--dorado); margin-bottom: 10px; }
+.herramienta-portada p { font-style: normal; }
+.herramienta-portada .edicion-fecha { color: var(--dorado); font-weight: 700; font-family: var(--f-texto); font-size: .95rem; }
 
 /* Dinero con Ingenio */
 .dinero {
@@ -529,3 +534,24 @@ strong { font-weight: 700; }
   .buscador-campo input { padding: 15px 18px; }
   .apunte-edicion, .apunte-suscripcion { padding: 24px 20px; }
 }
+
+/* ---------- Herramientas: ficha de cada recurso ---------- */
+.herramienta-intro { padding: 50px 0 34px; }
+.herramienta-intro h1 { font-size: clamp(2.2rem, 5.2vw, 3.6rem); font-weight: 800; margin-bottom: 18px; max-width: 820px; }
+.herramienta-intro .entradilla { max-width: 680px; }
+.herramienta-cuerpo { padding-bottom: 50px; }
+.descarga { background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 32px; box-shadow: 8px 8px 0 var(--dorado); max-width: 760px; }
+.descarga .botones { margin-top: 0; }
+.descarga-nota { margin-top: 18px; color: var(--tinta-3); font-size: .95rem; }
+.herramienta-cierre { background: var(--papel-2); border-top: 2px solid var(--tinta); }
+.herramienta-cierre .contenedor { padding-top: 64px; padding-bottom: 64px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: space-between; }
+.herramienta-cierre-texto { display: grid; gap: 12px; max-width: 600px; }
+.herramienta-cierre-texto .etiqueta { margin-bottom: 0; }
+.herramienta-cierre h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); margin: 0; }
+.herramienta-cierre p { color: var(--tinta-2); }
+.herramienta-cierre .botones { margin-top: 0; }
+.compartir-redes { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding-top: 24px; border-top: 1px dashed var(--linea); font-family: var(--f-mono); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--tinta-3); }
+.compartir-redes a, .compartir-redes button { font: inherit; color: var(--tinta); background: var(--blanco); border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; text-decoration: none; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.compartir-redes a:hover, .compartir-redes button:hover { transform: translateY(-2px); box-shadow: 0 3px 0 var(--tinta); }
+@media (max-width: 960px) { .herramienta-cierre .contenedor { padding-bottom: 110px; } }
+@media (max-width: 760px) { .descarga { padding: 24px 20px; } }

@@ -127,7 +127,8 @@ if (buscador) {
       f.classList.toggle("activo", activo);
       f.setAttribute("aria-pressed", activo);
     });
-    cuenta.textContent = visibles === 1 ? "1 apunte" : `${visibles} apuntes`;
+    const unidad = buscador.dataset.unidad || "apunte";
+    cuenta.textContent = visibles === 1 ? `1 ${unidad}` : `${visibles} ${unidad}s`;
     vacio.hidden = visibles > 0;
     const parametros = new URLSearchParams();
     if (campo.value.trim()) parametros.set("q", campo.value.trim());
@@ -153,6 +154,18 @@ if (buscador) {
   });
   filtrar();
 }
+
+// Herramientas: botón «Copiar enlace» de la ficha
+document.querySelectorAll("[data-copiar-enlace]").forEach((boton) => {
+  boton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(boton.dataset.copiarEnlace);
+      boton.textContent = "¡Enlace copiado!";
+    } catch (error) {
+      prompt("Copia el enlace:", boton.dataset.copiarEnlace);
+    }
+  });
+});
 
 // Substack no deja mostrar su formulario en una web abierta como archivo (doble clic).
 // En ese caso se cambia por un botón que lleva a la página de suscripción.
