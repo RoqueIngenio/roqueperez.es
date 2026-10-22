@@ -813,6 +813,11 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
     else:
         texto_edicion = "Cada dos lunes, a las 7:00, un problema real de planta, su causa raíz y una herramienta para aplicarla ese mismo lunes."
         boton_edicion = ""
+    notas = ""
+    if "<!-- NOTAS" in cuerpo_herramienta:  # notas de cálculo de la herramienta: van al final de la página
+        cuerpo_herramienta, notas = cuerpo_herramienta.split("<!-- NOTAS", 1)
+        notas = notas.split("-->", 1)[1].strip()
+        notas = f'<p class="herramienta-notas">{notas}</p>' if notas else ""
     q = urllib.parse.quote
     compartir = (f'<div class="compartir-redes">\n'
                  f'          <span>Compártela:</span>\n'
@@ -824,7 +829,7 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
     <section class="herramienta-intro">
       <div class="contenedor">
         <a class="apunte-volver" href="../index.html">← Todas las herramientas</a>
-        <p class="etiqueta">Herramienta gratuita · {html.escape(h["tipo"])}</p>
+        <p class="etiqueta">Herramientas para tu fábrica · {html.escape(h["tipo"])}</p>
         <h1>{nombre}</h1>
         {f'<p class="entradilla">{descripcion}</p>' if h["descripcion"] else ""}
       </div>
@@ -846,6 +851,7 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
           <a class="boton boton-principal" href="{SUBSTACK}" target="_blank" rel="noopener">Suscríbete a Ingenio Lean →</a>
         </div>
         {compartir}
+        {notas}
       </div>
     </section>
   """
@@ -901,13 +907,13 @@ def herramientas_portada(herramientas):
         return "        "
     tarjetas = "\n".join(
         f'          <a class="edicion herramienta-portada aparece" href="herramientas/{h["slug"]}/">\n'
-        f'            <span class="herramienta-portada-tipo">{html.escape(h["tipo"])} gratuita</span>\n'
+        f'            <span class="herramienta-portada-tipo">{html.escape(h["tipo"])}</span>\n'
         f'            <h4>{html.escape(h["nombre"])}</h4>\n'
         + (f'            <p>{html.escape(h["descripcion"])}</p>\n' if h["descripcion"] else "")
         + f'            <span class="edicion-fecha">{"Descargar →" if h["tipo"] in TIPOS_DESCARGA else "Usar gratis →"}</span>\n'
         "          </a>" for h in destacadas)
     return ('        <div class="ediciones-titulo aparece herramientas-portada-titulo">\n'
-            '          <h3 data-texto="lean.herramientas-titulo">Herramientas gratuitas</h3>\n'
+            '          <h3 data-texto="lean.herramientas-titulo">Herramientas para tu fábrica</h3>\n'
             '          <a href="herramientas/index.html" data-texto="lean.herramientas-enlace">Ver todas →</a>\n'
             '        </div>\n'
             '        <div class="ediciones">\n' + tarjetas + "\n        </div>\n        ")

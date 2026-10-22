@@ -129,6 +129,7 @@
 .calc .compartir-texto { width: 100%; min-height: 110px; font: inherit; font-size: .9rem; border: 2px solid var(--linea); border-radius: 12px; padding: 12px; background: var(--blanco); color: var(--tinta); }
 .calc .compartir-texto[hidden] { display: none; }
 .calc .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; min-height: 1.4em; }
+.calc .aviso:empty { min-height: 0; }
 .calc .calc-nota { font-size: .82rem; color: var(--tinta-3); line-height: 1.5; }
 
 .calc .barra-movil { display: none; }
@@ -202,9 +203,9 @@
         <button type="button" class="boton boton-principal boton-ancho" id="copy" data-goatcounter-click="coste-de-reuniones-copiar-resultado">Copiar mi resultado para compartir</button>
         <textarea class="compartir-texto" id="share-text" readonly hidden aria-label="Texto para compartir"></textarea>
         <p class="aviso" id="toast" role="status"></p>
+        <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="coste-de-reuniones-suscribirse">Suscribirse a Ingenio Lean →</a>
       </div>
 
-      <p class="calc-nota">Costes por hora orientativos: directivos 30 €/h, mandos intermedios 20 €/h, técnicos 20 €/h, operarios 16 €/h. Sin detallar asistentes se usa una media de 20 €/h. El año se calcula con 45 semanas laborables (estimación descontando vacaciones y festivos).</p>
     </aside>
   </div>
 
@@ -436,3 +437,6 @@ $("copy").addEventListener("click", async () => {
 renderMeetings();
 })();
 </script>
+
+<!-- NOTAS: lo que va debajo de esta línea lo coloca el robot al final de la página, bajo «Compártela». -->
+Costes por hora orientativos: directivos 30 €/h, mandos intermedios 20 €/h, técnicos 20 €/h, operarios 16 €/h. Sin detallar asistentes se usa una media de 20 €/h. El año se calcula con 45 semanas laborables (estimación descontando vacaciones y festivos).

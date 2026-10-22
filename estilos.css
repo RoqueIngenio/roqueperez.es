@@ -551,7 +551,8 @@ strong { font-weight: 700; }
 .herramienta-cierre p { color: var(--tinta-2); }
 .herramienta-cierre .botones { margin-top: 0; }
 .compartir-redes { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding-top: 24px; border-top: 1px dashed var(--linea); font-family: var(--f-mono); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--tinta-3); }
-.compartir-redes a, .compartir-redes button { font: inherit; color: var(--tinta); background: var(--blanco); border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; text-decoration: none; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.compartir-redes a, .compartir-redes button { font: inherit; text-transform: inherit; letter-spacing: inherit; color: var(--tinta); background: var(--blanco); border: 2px solid var(--tinta); border-radius: 999px; padding: 6px 14px; text-decoration: none; cursor: pointer; transition: transform .2s, box-shadow .2s; }
 .compartir-redes a:hover, .compartir-redes button:hover { transform: translateY(-2px); box-shadow: 0 3px 0 var(--tinta); }
 @media (max-width: 960px) { .herramienta-cierre .contenedor { padding-bottom: 110px; } }
 @media (max-width: 760px) { .descarga { padding: 24px 20px; } }
+.herramienta-notas { flex-basis: 100%; font-size: .82rem; line-height: 1.5; color: var(--tinta-3); max-width: 760px; }

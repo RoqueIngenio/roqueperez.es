@@ -362,7 +362,7 @@ En el taller
 Las primeras herramientas están en el banco de trabajo. Mientras tanto, tienes todas las ediciones de la newsletter esperándote.
 
 [lean.herramientas-titulo]
-Herramientas gratuitas
+Herramientas para tu fábrica
 
 [lean.herramientas-enlace]
 Ver todas →
