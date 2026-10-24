@@ -289,7 +289,7 @@ strong { font-weight: 700; }
 .suscripcion small { display: block; margin-top: 10px; font-family: var(--f-mono); font-size: 0.75rem; color: var(--tinta-3); text-align: center; }
 
 .ediciones-titulo { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; margin: 90px 0 26px; flex-wrap: wrap; }
-.ediciones-titulo h3 { font-size: 1.6rem; }
+.ediciones-titulo h3 { font-size: clamp(1.75rem, 3vw, 2.1rem); }
 .ediciones-titulo a { color: var(--dorado); font-weight: 700; text-decoration: none; }
 .ediciones-titulo a:hover { text-decoration: underline; }
 .ediciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
@@ -305,10 +305,12 @@ strong { font-weight: 700; }
 .edicion p { color: rgba(242, 239, 225, 0.65); font-size: 0.95rem; font-style: italic; }
 .edicion-fecha { margin-top: auto; padding-top: 16px; font-family: var(--f-mono); font-size: 0.75rem; color: rgba(242, 239, 225, 0.5); }
 .herramientas-portada-titulo { margin-top: 70px; }
-.herramienta-portada { background: rgba(224, 186, 91, 0.08); border-color: rgba(224, 186, 91, 0.45); min-height: 0; }
-.herramienta-portada-tipo { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--dorado); margin-bottom: 10px; }
-.herramienta-portada p { font-style: normal; }
-.herramienta-portada .edicion-fecha { color: var(--dorado); font-weight: 700; font-family: var(--f-texto); font-size: .95rem; }
+.herramienta-portada { background: var(--papel); border-color: var(--papel); color: var(--tinta); min-height: 0; transition: background .25s, border-color .25s; }
+.herramienta-portada:hover { background: var(--dorado); border-color: var(--dorado); transform: none; }
+.herramienta-portada-tipo { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--principal); margin-bottom: 10px; }
+.herramienta-portada h4 { color: var(--tinta); }
+.herramienta-portada p { font-style: normal; color: var(--tinta-2); }
+.herramienta-portada .edicion-fecha { color: var(--principal); font-weight: 700; font-family: var(--f-texto); font-size: .95rem; }
 
 /* Dinero con Ingenio */
 .dinero {
