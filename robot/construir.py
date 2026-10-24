@@ -713,6 +713,18 @@ def versionar_archivos():
             pagina.write_text(nuevo)
 
 
+def enlaces_limpios():
+    """Cambia los enlaces internos a «…/index.html» por su dirección limpia («…/»), que es
+    la canónica. Así Google no encuentra dos direcciones para la misma página. En la
+    carpeta local se mantienen con index.html para poder abrirlas con doble clic."""
+    patron = re.compile(r'href="((?:\.\./)*(?:[\w-]+/)*)index\.html(#[^"]*)?"')
+    for pagina in SALIDA.rglob("*.html"):
+        texto = pagina.read_text()
+        nuevo = patron.sub(lambda m: f'href="{m.group(1) or "./"}{m.group(2) or ""}"', texto)
+        if nuevo != texto:
+            pagina.write_text(nuevo)
+
+
 # ---------------------------------------------------------------- herramientas
 
 TIPOS_DESCARGA = ("PDF", "Plantilla", "Programa")
@@ -1034,6 +1046,7 @@ def main():
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":
         paso("marcar_publicados", lambda: marcar_publicados(apuntes))
 
+    enlaces_limpios()
     versionar_archivos()
     (SALIDA / "robot-estado.json").write_text(json.dumps(estado, ensure_ascii=False, indent=2))
     print(json.dumps(estado, ensure_ascii=False, indent=2))
