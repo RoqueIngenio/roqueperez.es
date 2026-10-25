@@ -547,6 +547,9 @@ strong { font-weight: 700; }
 .descarga { background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 32px; box-shadow: 8px 8px 0 var(--dorado); max-width: 760px; }
 .descarga .botones { margin-top: 0; }
 .descarga-nota { margin-top: 18px; color: var(--tinta-3); font-size: .95rem; }
+.descarga-extra { margin: 0 0 44px; box-shadow: 8px 8px 0 var(--papel-2); }
+.descarga-extra h2 { font-size: clamp(1.3rem, 2.4vw, 1.5rem); margin-bottom: 8px; }
+.descarga-extra p { color: var(--tinta-2); margin-bottom: 20px; }
 .herramienta-cierre { background: var(--papel-2); border-top: 2px solid var(--tinta); }
 .herramienta-cierre .contenedor { padding-top: 64px; padding-bottom: 64px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: space-between; }
 .herramienta-cierre-texto { display: grid; gap: 12px; max-width: 600px; }

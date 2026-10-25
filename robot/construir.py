@@ -150,7 +150,7 @@ def a_html(rich):
             s = f"<s>{s}</s>"
         if a.get("underline"):
             s = f"<u>{s}</u>"
-        enlace = (t.get("href") or "").strip()
+        enlace = enlace_limpio((t.get("href") or "").strip())
         if enlace.startswith("http"):
             s = f'<a href="{html.escape(enlace)}" target="_blank" rel="noopener">{s}</a>'
         salida += s
@@ -362,7 +362,7 @@ def ediciones_desde_notion():
         fecha = valor_fecha(f, "Fecha Publicación")
         if re.match(r"^\d+\.", titulo) and fecha:
             ediciones.append({"titulo": titulo, "subtitulo": "", "fecha": fecha,
-                              "enlace": propiedad(f, "Enlace ").get("url") or f"{SUBSTACK}/archive"})
+                              "enlace": enlace_limpio(propiedad(f, "Enlace ").get("url")) or f"{SUBSTACK}/archive"})
     ediciones.sort(key=lambda e: e["fecha"], reverse=True)
     if not ediciones:
         raise RuntimeError("Notion no devolvió ediciones")
@@ -470,14 +470,23 @@ def bloques_a_html(bloques, carpeta_img, prefijo_img):
     return "\n".join(partes)
 
 
+def enlace_limpio(url):
+    """Quita los añadidos de seguimiento de Substack (?r=…&utm_…) de un enlace."""
+    return url.split("?")[0].split("#")[0] if url and "substack.com" in url else url
+
+
 def edicion_relacionada(pagina):
+    """Enlace y título de la edición relacionada, solo si ya está publicada (Listo).
+    Así una herramienta o un apunte no enlazan una edición programada que aún no existe."""
     p = propiedad(pagina, "Edición relacionada")
     for rel in p.get("relation", [])[:1]:
         edicion = notion(f"pages/{rel['id']}")
+        if (propiedad(edicion, "Estado").get("status") or {}).get("name") != "Listo":
+            continue
         enlace = propiedad(edicion, "Enlace ").get("url") or propiedad(edicion, "Enlace").get("url")
         titulo = valor_texto(edicion, "Tarea")
         if enlace:
-            return enlace, titulo
+            return enlace_limpio(enlace), titulo
     return None, None
 
 
@@ -761,6 +770,20 @@ def herramientas_desde_notion():
     return herramientas
 
 
+def botones_descarga(descargas, slug, principal=True):
+    """Un botón por archivo: el PDF primero y en amarillo (si principal), el resto con contorno."""
+    formatos = {"PDF": "PDF", "PPTX": "PowerPoint editable", "PPT": "PowerPoint editable", "XLSX": "Excel editable",
+                "XLS": "Excel editable", "DOCX": "Word editable", "DOC": "Word editable", "ZIP": "ZIP"}
+    botones = []
+    for i, (nombre, tam) in enumerate(sorted(descargas, key=lambda d: (not d[0].lower().endswith(".pdf"), d[0]))):
+        ext = nombre.rsplit(".", 1)[-1].upper() if "." in nombre else ""
+        clase = "boton-principal" if principal and i == 0 else "boton-secundario"
+        botones.append(f'<a class="boton {clase}" href="{html.escape(nombre)}" download '
+                       f'data-goatcounter-click="descarga-{slug}-{ext.lower() or "archivo"}">'
+                       f'Descargar {formatos.get(ext, ext)} · {tamano_bonito(tam)} ↓</a>')
+    return botones
+
+
 def preparar_herramienta(h):
     """Deja en _site/herramientas/<dirección>/ lo que necesita la ficha: el código de la calculadora
     o los archivos para descargar. Devuelve el HTML que va en el cuerpo de la ficha."""
@@ -771,19 +794,26 @@ def preparar_herramienta(h):
     if (origen / "compartir.png").exists():
         shutil.copy(origen / "compartir.png", carpeta / "compartir.png")
         h["imagen"] = f"{DOMINIO}/herramientas/{h['slug']}/compartir.png"
-    if h["tipo"] not in TIPOS_DESCARGA:
-        codigo = origen / "herramienta.html"
-        if not codigo.exists():
-            raise RuntimeError(f"falta {codigo.relative_to(RAIZ)}")
-        return codigo.read_text()
-    # Descargables: primero los de la carpeta descargas/ del repositorio; si no hay, los de Notion
     descargas = []
     if (origen / "descargas").is_dir():
         for f in sorted((origen / "descargas").iterdir()):
             if f.is_file() and not f.name.startswith("."):
                 shutil.copy(f, carpeta / f.name)
                 descargas.append((f.name, f.stat().st_size))
-    else:
+    if h["tipo"] not in TIPOS_DESCARGA:
+        codigo = origen / "herramienta.html"
+        if not codigo.exists():
+            raise RuntimeError(f"falta {codigo.relative_to(RAIZ)}")
+        cuerpo = codigo.read_text()
+        if descargas:  # una calculadora con plantilla para trabajar sin conexión (p. ej. un Excel)
+            extra = ('<section class="descarga descarga-extra">\n  <h2>¿Prefieres hacerlo en tu Excel?</h2>\n'
+                     '  <p>Descarga la plantilla, pega tus datos y se calcula sola, sin conexión.</p>\n'
+                     f'  <div class="botones">{"".join(botones_descarga(descargas, h["slug"], principal=False))}</div>\n</section>\n')
+            marca = "<!-- NOTAS"
+            cuerpo = cuerpo.replace(marca, extra + marca, 1) if marca in cuerpo else cuerpo + extra
+        return cuerpo
+    # Descargables: primero los de la carpeta descargas/ del repositorio; si no hay, los de Notion
+    if not descargas:
         for a in h["archivos"]:
             nombre = re.sub(r"[^\w.\-]+", "-", unicodedata.normalize("NFKD", a["nombre"]).encode("ascii", "ignore").decode()).strip("-").lower() or "archivo"
             datos = urllib.request.urlopen(urllib.request.Request(a["url"], headers={"User-Agent": NAVEGADOR}), timeout=60).read()
@@ -791,16 +821,7 @@ def preparar_herramienta(h):
             descargas.append((nombre, len(datos)))
     if not descargas:
         raise RuntimeError("no tiene archivos: ni en descargas/ ni en la propiedad Archivo de Notion")
-    formatos = {"PDF": "PDF", "PPTX": "PowerPoint editable", "PPT": "PowerPoint editable", "XLSX": "Excel editable",
-                "XLS": "Excel editable", "DOCX": "Word editable", "DOC": "Word editable", "ZIP": "ZIP"}
-    descargas.sort(key=lambda d: (not d[0].lower().endswith(".pdf"), d[0]))  # el PDF, primero
-    botones = []
-    for i, (nombre, tam) in enumerate(descargas):
-        ext = nombre.rsplit(".", 1)[-1].upper() if "." in nombre else ""
-        clase = "boton-principal" if i == 0 else "boton-secundario"
-        botones.append(f'<a class="boton {clase}" href="{html.escape(nombre)}" download '
-                       f'data-goatcounter-click="descarga-{h["slug"]}-{ext.lower() or "archivo"}">'
-                       f'Descargar {formatos.get(ext, ext)} · {tamano_bonito(tam)} ↓</a>')
+    botones = botones_descarga(descargas, h["slug"])
     vista = ""
     imagen_vista = next((origen / n for n in ("vista-previa.jpg", "vista-previa.png") if (origen / n).exists()), None)
     if imagen_vista:  # imagen de cómo es el documento, antes de descargarlo

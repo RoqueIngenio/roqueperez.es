@@ -1,0 +1,522 @@
+<!-- Calculadora de análisis ABC (y XYZ). El robot la mete en la página
+     roqueperez.es/herramientas/analisis-abc/, entre la cabecera de la ficha y el cierre.
+     Todos los estilos van dentro de .calc para no chocar con estilos.css.
+     Los datos se procesan solo en el navegador de quien la usa: no se envían a ningún sitio. -->
+<style>
+.calc { --papel-78: rgba(242, 239, 225, 0.78); --papel-18: rgba(242, 239, 225, 0.18); font-size: 17px; }
+.calc h2, .calc h3 { margin: 0; text-wrap: balance; }
+.calc p { margin: 0; }
+
+.calc .rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 36px; align-items: start; padding-bottom: 40px; }
+@media (max-width: 960px) { .calc .rejilla { grid-template-columns: minmax(0, 1fr); } }
+
+.calc .calc-paso { display: grid; gap: 14px; }
+.calc .calc-paso + .calc-paso { margin-top: 40px; }
+.calc .calc-paso-cabecera { display: flex; align-items: center; gap: 12px; }
+.calc .calc-paso-num {
+  flex: none; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--dorado); color: var(--tinta); font-family: var(--f-mono); font-weight: 700; font-size: .9rem;
+}
+.calc h2 { font-size: clamp(1.35rem, 2.6vw, 1.6rem); font-weight: 700; }
+.calc .pista { font-size: .95rem; color: var(--tinta-3); max-width: 62ch; }
+.calc .pista b { color: var(--tinta-2); }
+
+.calc .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.calc .chip {
+  border: 2px solid var(--linea); background: transparent; color: var(--tinta); border-radius: 999px;
+  padding: 6px 14px; font: inherit; font-size: .92rem; font-weight: 500; cursor: pointer; font-variant-numeric: tabular-nums;
+  transition: border-color .15s, background .15s;
+}
+.calc .chip:hover { border-color: var(--tinta); }
+.calc .chip[aria-pressed="true"] { background: var(--principal); border-color: var(--principal); color: var(--papel); }
+
+.calc .pegar {
+  width: 100%; min-height: 220px; resize: vertical; font-family: var(--f-mono); font-size: .88rem; line-height: 1.55;
+  background: var(--blanco); color: var(--tinta); border: 2px solid var(--tinta); border-radius: 16px; padding: 16px 18px;
+  transition: box-shadow .2s, transform .2s; white-space: pre; overflow: auto; tab-size: 12;
+}
+.calc .pegar::placeholder { color: var(--tinta-3); opacity: .85; }
+.calc .pegar:focus { outline: none; transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--dorado); }
+.calc .lectura { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; font-size: .92rem; }
+.calc .lectura-estado { font-family: var(--f-mono); font-weight: 700; font-size: .82rem; background: var(--papel-2); border-radius: 999px; padding: 3px 10px; }
+.calc .lectura-estado.ok { background: var(--verde-claro); color: var(--verde); }
+.calc .lectura-aviso { color: var(--tinta-3); }
+.calc .enlace-boton {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: .92rem; color: var(--principal);
+  text-decoration: underline; text-decoration-color: var(--dorado); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.calc .privacidad { display: flex; gap: 10px; align-items: flex-start; font-size: .93rem; color: var(--tinta); background: var(--verde-claro); border-left: 4px solid var(--verde); border-radius: 12px; padding: 12px 16px; }
+.calc .privacidad b { color: var(--verde); }
+.calc .privacidad::before { content: "🔒"; flex: none; }
+
+.calc .panel { position: sticky; top: 90px; display: grid; gap: 18px; }
+.calc .resultado {
+  background: var(--principal); color: var(--papel); border-radius: var(--radio);
+  padding: 26px 24px; display: grid; gap: 18px;
+}
+.calc .resultado .etiqueta { color: var(--dorado); margin-bottom: 0; }
+.calc .cifra { font-family: var(--f-titulo); font-weight: 800; font-size: clamp(2.8rem, 6vw, 3.8rem); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.calc .cifra-sub { color: var(--papel-78); font-size: 1rem; margin-top: -8px; }
+.calc .datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid var(--papel-18); }
+.calc .dato { display: grid; gap: 2px; min-width: 0; }
+.calc .dato b { font-family: var(--f-mono); font-weight: 700; font-size: 1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.calc .dato span { font-size: .78rem; color: var(--papel-78); line-height: 1.3; }
+.calc .equivale { font-size: .98rem; color: var(--papel); }
+.calc .equivale strong { background: linear-gradient(transparent 62%, rgba(224, 186, 91, 0.5) 62%); padding: 0 2px; }
+
+.calc .tarjeta { background: var(--blanco); border: 2px solid var(--tinta); border-radius: 16px; padding: 20px; display: grid; gap: 14px; }
+.calc h3 { font-size: 1.15rem; font-weight: 700; }
+.calc .vacio { font-size: .92rem; color: var(--tinta-3); }
+.calc .pareto { width: 100%; height: auto; display: block; }
+.calc .pareto text { font-family: var(--f-mono); font-size: 9px; fill: var(--tinta-3); }
+.calc .pareto .letra { font-family: var(--f-titulo); font-weight: 800; font-size: 13px; fill: var(--tinta); }
+.calc .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--tinta-2); }
+.calc .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+.calc .matriz { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 6px; font-size: .85rem; }
+.calc .matriz span { display: grid; place-items: center; text-align: center; }
+.calc .matriz .cab { font-family: var(--f-mono); font-weight: 700; font-size: .8rem; color: var(--tinta-3); padding: 2px 6px; }
+.calc .matriz .celda { background: var(--papel); border-radius: 10px; padding: 8px 4px; line-height: 1.25; }
+.calc .matriz .celda b { font-family: var(--f-titulo); font-size: 1.1rem; }
+.calc .matriz .celda small { display: block; color: var(--tinta-3); font-size: .72rem; }
+.calc .matriz .celda.fuerte { background: var(--dorado-claro); }
+.calc .matriz .celda.alerta { background: #f3d9cf; }
+
+.calc .grupos { display: grid; }
+.calc .grupo { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding-block: 12px; border-top: 1px solid var(--linea); font-size: .93rem; }
+.calc .grupo:first-child { border-top: 0; padding-top: 0; }
+.calc .grupo:last-child { padding-bottom: 0; }
+.calc .clase { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-family: var(--f-titulo); font-weight: 800; font-size: 1rem; }
+.calc .clase-A { background: var(--dorado); color: var(--tinta); }
+.calc .clase-B { background: var(--papel-2); color: var(--tinta); }
+.calc .clase-C { background: transparent; color: var(--tinta-3); border: 2px solid var(--linea); }
+
+.calc .boton { justify-content: center; font: inherit; font-weight: 700; cursor: pointer; }
+.calc .boton-ancho { width: 100%; }
+.calc .compartir { display: grid; gap: 10px; }
+.calc .compartir-texto { width: 100%; min-height: 110px; font: inherit; font-size: .9rem; border: 2px solid var(--linea); border-radius: 12px; padding: 12px; background: var(--blanco); color: var(--tinta); }
+.calc .compartir-texto[hidden] { display: none; }
+.calc .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; min-height: 1.4em; }
+.calc .aviso:empty { min-height: 0; }
+
+.calc .tabla-bloque { display: grid; gap: 16px; padding-bottom: 40px; }
+.calc .tabla-bloque[hidden] { display: none; }
+.calc .tabla-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.calc .tabla-envoltorio { overflow-x: auto; border: 2px solid var(--tinta); border-radius: 16px; background: var(--blanco); }
+.calc table { width: 100%; border-collapse: collapse; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.calc th { text-align: left; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); font-weight: 700; padding: 12px 14px; border-bottom: 2px solid var(--linea); white-space: nowrap; }
+.calc td { padding: 9px 14px; border-bottom: 1px solid var(--linea); white-space: nowrap; }
+.calc tr:last-child td { border-bottom: 0; }
+.calc td.num, .calc th.num { text-align: right; font-family: var(--f-mono); }
+.calc td.nombre { white-space: normal; min-width: 160px; }
+.calc .acum { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.calc .acum i { display: block; width: 60px; height: 6px; background: var(--papel-2); border-radius: 999px; overflow: hidden; }
+.calc .acum i::after { content: ""; display: block; height: 100%; width: var(--p); background: var(--dorado); }
+.calc .tabla-pie { display: flex; justify-content: center; }
+
+@media (max-width: 960px) { .calc .panel { position: static; } }
+@media (max-width: 420px) { .calc .datos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .calc .pegar { transition: none; } .calc .pegar:focus { transform: none; } }
+</style>
+
+<div class="calc">
+  <div class="rejilla">
+    <div>
+      <section class="calc-paso">
+        <div class="calc-paso-cabecera"><span class="calc-paso-num">1</span><h2>¿Qué quieres analizar?</h2></div>
+        <div class="chips" role="group" aria-label="Qué analizar">
+          <button type="button" class="chip" data-modo="clientes" aria-pressed="true">Clientes</button>
+          <button type="button" class="chip" data-modo="productos" aria-pressed="false">Productos o referencias</button>
+        </div>
+      </section>
+
+      <section class="calc-paso">
+        <div class="calc-paso-cabecera"><span class="calc-paso-num">2</span><h2>Pega tus datos desde Excel</h2></div>
+        <p class="pista">Selecciona en tu Excel <b>dos columnas: el nombre (o código) y la facturación del año</b>, cópialas y pégalas aquí. Si en lugar del total pegas <b>una columna por mes</b>, también verás qué <span data-u="plural">clientes</span> compran de forma regular y cuáles a golpes (análisis XYZ).</p>
+        <p class="privacidad"><span><b>Esta web no registra ninguno de tus datos.</b> Lo que pegas se calcula en tu propio navegador: no se envía a ningún servidor, no se guarda y desaparece al cerrar la página.</span></p>
+        <textarea class="pegar" id="datos" spellcheck="false" aria-label="Datos pegados desde Excel" placeholder="Cliente&#9;Facturación&#10;Talleres Martínez&#9;184.500&#10;Muebles del Sur&#9;96.200&#10;Hierros Alcoy&#9;12.750&#10;…"></textarea>
+        <div class="lectura">
+          <span class="lectura-estado" id="estado">Esperando datos</span>
+          <span class="lectura-aviso" id="aviso-lectura"></span>
+          <button type="button" class="enlace-boton" id="ejemplo">¿Sin datos a mano? Prueba con un ejemplo</button>
+          <button type="button" class="enlace-boton" id="borrar" hidden>Borrar</button>
+        </div>
+      </section>
+
+      <section class="calc-paso">
+        <div class="calc-paso-cabecera"><span class="calc-paso-num">3</span><h2>Dónde cortas cada grupo</h2></div>
+        <div class="chips" role="group" aria-label="Reparto de los grupos A, B y C">
+          <button type="button" class="chip" data-corte="80,95" aria-pressed="true">A 80 % · B 15 % · C 5 % (el clásico)</button>
+          <button type="button" class="chip" data-corte="70,90" aria-pressed="false">A 70 % · B 20 % · C 10 %</button>
+        </div>
+        <p class="pista">Los <span data-u="plural">clientes</span> A suman el primer tramo de tu facturación, los B el siguiente y los C el resto. El clásico es el que encaja en casi todas las empresas.</p>
+      </section>
+    </div>
+
+    <aside class="panel" id="resultado" aria-live="polite">
+      <div class="resultado">
+        <span class="etiqueta">Tu regla del 80/20</span>
+        <span class="cifra" id="cifra">—</span>
+        <span class="cifra-sub" id="cifra-sub">Pega tus datos para ver el resultado.</span>
+        <div class="datos">
+          <div class="dato"><b id="n-A">0</b><span id="s-A">A</span></div>
+          <div class="dato"><b id="n-B">0</b><span id="s-B">B</span></div>
+          <div class="dato"><b id="n-C">0</b><span id="s-C">C</span></div>
+        </div>
+        <p class="equivale" id="equiv"></p>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Tu curva de Pareto</h3>
+        <div id="curva"><p class="vacio">Aquí verás cómo se reparte tu facturación.</p></div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>¿Compran de forma regular?</h3>
+        <div id="xyz"><p class="vacio">Pega la facturación mes a mes (una columna por mes) para ver qué <span data-u="plural">clientes</span> compran de forma regular (X), con altibajos (Y) o a golpes (Z).</p></div>
+      </div>
+
+      <div class="tarjeta">
+        <h3>Qué hacer con cada grupo</h3>
+        <div class="grupos" id="grupos"></div>
+      </div>
+
+      <div class="compartir">
+        <button type="button" class="boton boton-principal boton-ancho" id="copy" data-goatcounter-click="analisis-abc-copiar-resultado">Copiar mi resultado para compartir</button>
+        <textarea class="compartir-texto" id="share-text" readonly hidden aria-label="Texto para compartir"></textarea>
+        <p class="aviso" id="toast" role="status"></p>
+        <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-abc-suscribirse">Suscribirse a Ingenio Lean →</a>
+      </div>
+    </aside>
+  </div>
+
+  <section class="tabla-bloque" id="tabla-bloque" hidden>
+    <div class="tabla-cabecera">
+      <h2>Tu clasificación</h2>
+      <button type="button" class="boton boton-secundario" id="copiar-tabla" data-goatcounter-click="analisis-abc-copiar-tabla">Copiar tabla para Excel</button>
+    </div>
+    <div class="tabla-envoltorio"><table id="tabla"></table></div>
+    <div class="tabla-pie"><button type="button" class="enlace-boton" id="ver-todo" hidden></button></div>
+    <p class="aviso" id="toast-tabla" role="status"></p>
+  </section>
+</div>
+
+<script>
+(() => {
+// ===== Parámetros (ajustables) =====
+const XYZ_LIMITES = [0.5, 1.0];   // coeficiente de variación: X hasta 0,5 · Y hasta 1 · Z por encima
+const MIN_PERIODOS_XYZ = 3;       // hacen falta al menos 3 meses (o periodos) para el XYZ
+const FILAS_VISIBLES = 20;
+const MAX_FILAS = 10000;
+const SHARE_URL = "https://roqueperez.es/herramientas/analisis-abc/";
+const UNIDAD = {
+  clientes:  { sing: "cliente", plural: "clientes", Plural: "Clientes" },
+  productos: { sing: "referencia", plural: "referencias", Plural: "Referencias" }
+};
+const CONSEJOS = {
+  clientes: {
+    A: "Son tu empresa. Visítalos, cuida el servicio y vigila cuánto dependes de cada uno.",
+    B: "Tu cantera: con algo de atención, algunos pueden subir a A.",
+    C: "Revisa cuánto te cuesta servirlos: pedido mínimo, tarifas, portes y pedidos por la web en lugar de por teléfono."
+  },
+  productos: {
+    A: "Nunca pueden faltar: revisa su stock a menudo y ten bien atados sus proveedores.",
+    B: "Control normal: revisión periódica y lotes ajustados.",
+    C: "Candidatos a simplificar: fabricar bajo pedido, agrupar compras o sacarlos del catálogo."
+  }
+};
+
+// ===== Estado: siempre empieza limpio =====
+let modo = "clientes";
+let corte = [0.8, 0.95];
+let verTodo = false;
+let res = null;
+
+const $ = (id) => document.getElementById(id);
+const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0, useGrouping: "always" });
+const num = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0, useGrouping: "always" });
+const pct = (x, d = 0) => `${new Intl.NumberFormat("es-ES", { maximumFractionDigits: d, minimumFractionDigits: d }).format(x * 100)} %`;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const u = () => UNIDAD[modo];
+
+// ===== Lectura de los datos pegados =====
+// Admite números en formato español (12.345,67) o inglés (12,345.67), con o sin €.
+// El formato se decide mirando todo lo pegado, para no confundir «1,000» (inglés) con «1,5» (español).
+let formatoIngles = false;
+function leerNumero(txt) {
+  let s = String(txt).replace(/[€\s ]/g, "");
+  if (s === "" || s === "-") return 0;
+  if (!/^-?[\d.,]+$/.test(s)) return NaN;
+  if (formatoIngles) { const n = Number(s.replace(/,/g, "")); return Number.isFinite(n) ? n : NaN; }
+  const p = s.lastIndexOf("."), c = s.lastIndexOf(",");
+  if (p >= 0 && c >= 0) s = p > c ? s.replace(/,/g, "") : s.replace(/\./g, "").replace(",", ".");
+  else if (c >= 0) s = (s.match(/,/g).length > 1) ? s.replace(/,/g, "") : s.replace(",", ".");
+  else if (p >= 0 && (s.match(/\./g).length > 1 || /^-?\d{1,3}\.\d{3}$/.test(s))) s = s.replace(/\./g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function trocear(linea) {
+  if (linea.includes("\t")) return linea.split("\t");
+  if (linea.includes(";")) return linea.split(";");
+  // Sin tabuladores: los números del final son los valores y lo anterior, el nombre.
+  const t = linea.trim().split(/\s+/);
+  let k = t.length;
+  while (k > 1 && !Number.isNaN(leerNumero(t[k - 1]))) k--;
+  return [t.slice(0, k).join(" "), ...t.slice(k)];
+}
+
+function leer(texto) {
+  formatoIngles = /\d,\d{3}\.\d/.test(texto) || (/\d\.\d{1,2}(?![\d.])/.test(texto) && !/\d,\d{1,2}(?![\d,])/.test(texto));
+  const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "").slice(0, MAX_FILAS);
+  const mapa = new Map();
+  let ignoradas = 0, periodos = 0;
+  lineas.forEach((linea, i) => {
+    const celdas = trocear(linea).map((c) => c.trim());
+    const nombre = celdas[0];
+    const valores = celdas.slice(1).map(leerNumero);
+    while (valores.length && valores[valores.length - 1] === 0 && celdas[celdas.length - 1] === "") { valores.pop(); celdas.pop(); }
+    if (!nombre || !valores.length || valores.some(Number.isNaN)) {
+      if (i > 0 || valores.length === 0 || !valores.every(Number.isNaN)) ignoradas++;   // la primera línea con texto es la cabecera
+      return;
+    }
+    periodos = Math.max(periodos, valores.length);
+    const clave = nombre.toLocaleLowerCase("es");
+    const previo = mapa.get(clave);
+    if (previo) valores.forEach((v, j) => { previo.v[j] = (previo.v[j] || 0) + v; });   // si se repite, se suma
+    else mapa.set(clave, { nombre, v: valores.slice() });
+  });
+  // La cabecera no cuenta como línea ignorada
+  if (lineas.length && trocear(lineas[0]).slice(1).every((c) => Number.isNaN(leerNumero(c.trim())))) ignoradas = Math.max(0, ignoradas - 1);
+  const items = [...mapa.values()].map((x) => {
+    const v = Array.from({ length: periodos }, (_, j) => x.v[j] || 0);
+    return { nombre: x.nombre, v, total: v.reduce((a, b) => a + b, 0) };
+  });
+  return { items, ignoradas, periodos, recortado: texto.split(/\r?\n/).filter((l) => l.trim()).length > MAX_FILAS };
+}
+
+// ===== Cálculo =====
+function calcular(datos) {
+  const validos = datos.items.filter((x) => x.total > 0).sort((a, b) => b.total - a.total);
+  const fuera = datos.items.length - validos.length;
+  const total = validos.reduce((s, x) => s + x.total, 0);
+  const conXYZ = datos.periodos >= MIN_PERIODOS_XYZ;
+  let acum = 0;
+  validos.forEach((x, i) => {
+    const antes = acum / total;
+    acum += x.total;
+    x.pos = i + 1;
+    x.cuota = x.total / total;
+    x.acum = acum / total;
+    x.clase = antes < corte[0] ? "A" : antes < corte[1] ? "B" : "C";
+    if (conXYZ) {
+      const media = x.total / x.v.length;
+      const desv = Math.sqrt(x.v.reduce((s, v) => s + (v - media) ** 2, 0) / x.v.length);
+      x.cv = desv / media;
+      x.xyz = x.cv <= XYZ_LIMITES[0] ? "X" : x.cv <= XYZ_LIMITES[1] ? "Y" : "Z";
+    }
+  });
+  const grupo = (c) => {
+    const g = validos.filter((x) => x.clase === c);
+    return { n: g.length, cuota: g.reduce((s, x) => s + x.cuota, 0) };
+  };
+  return { items: validos, total, fuera, conXYZ, periodos: datos.periodos, A: grupo("A"), B: grupo("B"), C: grupo("C") };
+}
+
+// ===== Pintar resultados =====
+function pintarCurva(r) {
+  const W = 320, H = 200, x0 = 34, x1 = 310, y0 = 172, y1 = 14;
+  const X = (f) => x0 + f * (x1 - x0), Y = (f) => y0 - f * (y0 - y1);
+  const n = r.items.length;
+  const fA = r.A.n / n, fB = (r.A.n + r.B.n) / n;
+  const paso = Math.max(1, Math.floor(n / 400));   // con muchas filas, la curva se dibuja con unos 400 puntos
+  let pts = `${X(0)},${Y(0)}`;
+  r.items.forEach((x, i) => { if (i % paso === 0 || i === n - 1) pts += ` ${X((i + 1) / n).toFixed(1)},${Y(x.acum).toFixed(1)}`; });
+  const banda = (a, b, color) => b > a ? `<rect x="${X(a)}" y="${y1}" width="${X(b) - X(a)}" height="${y0 - y1}" style="fill:${color}"/>` : "";
+  const letra = (a, b, l) => (X(b) - X(a)) > 14 ? `<text class="letra" x="${(X(a) + X(b)) / 2}" y="${y1 + 16}" text-anchor="middle">${l}</text>` : "";
+  const yA = r.A.cuota;
+  $("curva").innerHTML = `<svg class="pareto" viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de Pareto: el ${pct(fA)} de los ${u().plural} suma el ${pct(yA)} de la facturación">
+      ${banda(0, fA, "var(--dorado-claro)")}${banda(fA, fB, "var(--papel)")}
+      ${letra(0, fA, "A")}${letra(fA, fB, "B")}${letra(fB, 1, "C")}
+      <line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" style="stroke:var(--tinta-3)" stroke-width="1"/>
+      <line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" style="stroke:var(--tinta-3)" stroke-width="1"/>
+      <line x1="${x0}" y1="${Y(yA)}" x2="${X(fA)}" y2="${Y(yA)}" style="stroke:var(--tinta)" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="${X(fA)}" y1="${Y(yA)}" x2="${X(fA)}" y2="${y0}" style="stroke:var(--tinta)" stroke-width="1" stroke-dasharray="3 3"/>
+      <polyline points="${pts}" fill="none" style="stroke:var(--principal)" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="${X(fA)}" cy="${Y(yA)}" r="4" style="fill:var(--dorado);stroke:var(--tinta)" stroke-width="1.5"/>
+      <text x="${x0 - 5}" y="${y0 + 3}" text-anchor="end">0</text>
+      <text x="${x0 - 5}" y="${Y(yA) + 3}" text-anchor="end">${Math.round(yA * 100)}%</text>
+      <text x="${x0 - 5}" y="${y1 + 3}" text-anchor="end">100%</text>
+      <text x="${X(fA)}" y="${y0 + 12}" text-anchor="middle">${Math.round(fA * 100)}%</text>
+      <text x="${x1}" y="${y0 + 12}" text-anchor="end">100%</text>
+      <text x="${(x0 + x1) / 2}" y="${H - 2}" text-anchor="middle">% de ${u().plural} (de mayor a menor)</text>
+    </svg>
+    <div class="leyenda"><span><i style="background:var(--principal)"></i>Facturación acumulada</span><span><i style="background:var(--dorado)"></i>Corte de los A</span></div>`;
+}
+
+function pintarXYZ(r) {
+  if (!r.conXYZ) {
+    $("xyz").innerHTML = r.periodos === 2
+      ? `<p class="vacio">Para saber si compran de forma regular hacen falta al menos ${MIN_PERIODOS_XYZ} columnas (meses o periodos). Con 2 he sumado las dos para el ABC.</p>`
+      : `<p class="vacio">Pega la facturación mes a mes (una columna por mes) para ver qué ${u().plural} compran de forma regular (X), con altibajos (Y) o a golpes (Z).</p>`;
+    return;
+  }
+  const celda = (a, x) => {
+    const g = r.items.filter((i) => i.clase === a && i.xyz === x);
+    const cuota = g.reduce((s, i) => s + i.cuota, 0);
+    const cls = a === "A" && x === "X" ? "fuerte" : a === "A" && x === "Z" ? "alerta" : "";
+    return `<span class="celda ${cls}"><b>${g.length}</b><small>${pct(cuota)}</small></span>`;
+  };
+  const az = r.items.filter((i) => i.clase === "A" && i.xyz === "Z").length;
+  $("xyz").innerHTML = `<div class="matriz">
+      <span></span><span class="cab">X regular</span><span class="cab">Y altibajos</span><span class="cab">Z a golpes</span>
+      ${["A", "B", "C"].map((a) => `<span class="cab">${a}</span>${["X", "Y", "Z"].map((x) => celda(a, x)).join("")}`).join("")}
+    </div>
+    <p class="vacio">Número de ${u().plural} y % de la facturación en cada casilla, con ${r.periodos} periodos. ${az
+      ? `<strong>${az} ${az === 1 ? u().sing : u().plural} A ${az === 1 ? "compra" : "compran"} a golpes</strong>: ${modo === "clientes" ? "son los que más desordenan la planificación." : "son las que más stock de seguridad piden."}`
+      : "Ningún A compra a golpes: buena señal para planificar."}</p>`;
+}
+
+function pintarGrupos(r) {
+  $("grupos").innerHTML = ["A", "B", "C"].map((c) => `<div class="grupo">
+      <span class="clase clase-${c}">${c}</span>
+      <span>${r ? `<b>${num.format(r[c].n)} ${r[c].n === 1 ? u().sing : u().plural} · ${pct(r[c].cuota)} de la facturación.</b> ` : ""}${CONSEJOS[modo][c]}</span>
+    </div>`).join("");
+}
+
+function pintarTabla(r) {
+  const filas = verTodo ? r.items : r.items.slice(0, FILAS_VISIBLES);
+  $("tabla").innerHTML = `<thead><tr>
+      <th class="num">#</th><th>${u().Plural.replace(/s$/, "")}</th><th class="num">Facturación</th><th class="num">% del total</th><th class="num">% acumulado</th><th>ABC</th>${r.conXYZ ? "<th>XYZ</th>" : ""}
+    </tr></thead><tbody>${filas.map((x) => `<tr>
+      <td class="num">${x.pos}</td><td class="nombre">${esc(x.nombre)}</td><td class="num">${eur.format(x.total)}</td>
+      <td class="num">${pct(x.cuota, 1)}</td>
+      <td class="num"><span class="acum">${pct(x.acum, 1)}<i style="--p:${(x.acum * 100).toFixed(1)}%"></i></span></td>
+      <td><span class="clase clase-${x.clase}">${x.clase}</span></td>${r.conXYZ ? `<td><span class="clase clase-B">${x.xyz}</span></td>` : ""}
+    </tr>`).join("")}</tbody>`;
+  const extra = r.items.length - FILAS_VISIBLES;
+  $("ver-todo").hidden = extra <= 0;
+  $("ver-todo").textContent = verTodo ? "Ver solo los 20 primeros" : `Ver los ${num.format(r.items.length)} ${u().plural}`;
+}
+
+function actualizar() {
+  document.querySelectorAll(".calc [data-u='plural']").forEach((el) => { el.textContent = u().plural; });
+  const texto = $("datos").value;
+  $("borrar").hidden = texto.trim() === "";
+  $("ejemplo").hidden = texto.trim() !== "";
+  const datos = leer(texto);
+  const r = datos.items.length ? calcular(datos) : null;
+  res = r && r.items.length ? r : null;
+
+  // Estado de la lectura
+  const est = $("estado");
+  if (!texto.trim()) { est.textContent = "Esperando datos"; est.className = "lectura-estado"; $("aviso-lectura").textContent = ""; }
+  else if (!res) { est.textContent = "No encuentro números"; est.className = "lectura-estado"; $("aviso-lectura").textContent = "Revisa que la primera columna sea el nombre y las siguientes, importes."; }
+  else {
+    est.textContent = `Leídos ${num.format(res.items.length)} ${u().plural}${res.periodos > 1 ? ` · ${res.periodos} periodos` : ""}`;
+    est.className = "lectura-estado ok";
+    const avisos = [];
+    if (datos.ignoradas) avisos.push(`${datos.ignoradas} ${datos.ignoradas === 1 ? "línea ignorada" : "líneas ignoradas"} por no tener importes`);
+    if (res.fuera) avisos.push(`${res.fuera} con facturación 0 o negativa, fuera del análisis`);
+    if (datos.recortado) avisos.push(`solo se leen las primeras ${num.format(MAX_FILAS)} líneas`);
+    $("aviso-lectura").textContent = avisos.join(" · ");
+  }
+
+  if (!res) {
+    $("cifra").textContent = "—";
+    $("cifra-sub").textContent = "Pega tus datos para ver el resultado.";
+    ["A", "B", "C"].forEach((c) => { $(`n-${c}`).textContent = "0"; $(`s-${c}`).textContent = c; });
+    $("equiv").textContent = "";
+    $("curva").innerHTML = `<p class="vacio">Aquí verás cómo se reparte tu facturación.</p>`;
+    pintarXYZ({ conXYZ: false, periodos: 0 });
+    pintarGrupos(null);
+    $("tabla-bloque").hidden = true;
+    return;
+  }
+
+  const fA = res.A.n / res.items.length;
+  $("cifra").textContent = pct(fA);
+  $("cifra-sub").textContent = `de tus ${u().plural} genera el ${pct(res.A.cuota)} de tu facturación.`;
+  ["A", "B", "C"].forEach((c) => {
+    $(`n-${c}`).textContent = num.format(res[c].n);
+    $(`s-${c}`).textContent = `${u().plural} ${c} · ${pct(res[c].cuota)}`;
+  });
+  const primero = res.items[0];
+  $("equiv").innerHTML = res.items.length < 2 ? "" : modo === "clientes"
+    ? `Si mañana perdieras a tu mayor cliente, perderías <strong>el ${pct(primero.cuota)} de lo que facturas</strong> (${eur.format(primero.total)}).`
+    : `Tu referencia más vendida supone <strong>el ${pct(primero.cuota)} de la facturación</strong> (${eur.format(primero.total)}).`;
+  pintarCurva(res);
+  pintarXYZ(res);
+  pintarGrupos(res);
+  $("tabla-bloque").hidden = false;
+  pintarTabla(res);
+}
+
+// ===== Eventos =====
+document.querySelectorAll(".calc [data-modo]").forEach((b) => b.addEventListener("click", () => {
+  modo = b.dataset.modo;
+  document.querySelectorAll(".calc [data-modo]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  actualizar();
+}));
+document.querySelectorAll(".calc [data-corte]").forEach((b) => b.addEventListener("click", () => {
+  corte = b.dataset.corte.split(",").map((v) => Number(v) / 100);
+  document.querySelectorAll(".calc [data-corte]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  actualizar();
+}));
+let espera;
+$("datos").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(actualizar, 150); });
+$("borrar").addEventListener("click", () => { $("datos").value = ""; verTodo = false; actualizar(); $("datos").focus(); });
+$("ver-todo").addEventListener("click", () => { verTodo = !verTodo; pintarTabla(res); });
+
+// Ejemplo inventado (30 clientes, 12 meses), solo si lo pide quien entra
+$("ejemplo").addEventListener("click", () => {
+  let semilla = 7;
+  const azar = () => (semilla = (semilla * 16807) % 2147483647) / 2147483647;
+  const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const filas = [`${modo === "clientes" ? "Cliente" : "Referencia"}\t${meses.join("\t")}`];
+  for (let i = 1; i <= 30; i++) {
+    const base = 7000 * Math.exp(-0.3 * (i - 1)) + 150;
+    const golpes = i % 4 === 0;
+    const v = meses.map(() => Math.round(golpes ? (azar() < 0.3 ? base * 3 * azar() + base : 0) : base * (0.7 + 0.6 * azar())));
+    filas.push(`${modo === "clientes" ? "Cliente" : "Ref."} ${String(i).padStart(2, "0")}\t${v.join("\t")}`);
+  }
+  $("datos").value = filas.join("\n");
+  actualizar();
+});
+
+// ===== Compartir =====
+function shareText() {
+  const fA = res.A.n / res.items.length;
+  const extra = modo === "clientes" && res.items.length > 1 ? ` Y mi mayor cliente supone el ${pct(res.items[0].cuota)}.` : "";
+  return `El ${pct(fA)} de mis ${u().plural} genera el ${pct(res.A.cuota)} de la facturación.${extra}\n\nLo he calculado en un minuto con la herramienta gratuita de Ingenio Lean: ${SHARE_URL}`;
+}
+async function copiar(texto, toast, ta) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    if (ta) ta.hidden = true;
+    return true;
+  } catch (err) {
+    if (ta) { ta.value = texto; ta.hidden = false; ta.focus(); ta.select(); }
+    return false;
+  }
+}
+$("copy").addEventListener("click", async () => {
+  if (!res) { $("toast").textContent = "Primero pega tus datos."; return; }
+  const ok = await copiar(shareText(), $("toast"), $("share-text"));
+  $("toast").textContent = ok ? "Copiado. Pégalo en LinkedIn, WhatsApp o donde quieras." : "No se pudo copiar automáticamente: selecciona el texto y cópialo.";
+});
+$("copiar-tabla").addEventListener("click", async () => {
+  if (!res) return;
+  const dec = (x, d) => x.toFixed(d).replace(".", ",");
+  const lineas = [[u().Plural.replace(/s$/, ""), "Facturación", "% del total", "% acumulado", "ABC", ...(res.conXYZ ? ["XYZ"] : [])].join("\t"),
+    ...res.items.map((x) => [x.nombre, dec(x.total, 2), dec(x.cuota * 100, 2), dec(x.acum * 100, 2), x.clase, ...(res.conXYZ ? [x.xyz] : [])].join("\t"))];
+  const ok = await copiar(lineas.join("\n"));
+  $("toast-tabla").textContent = ok ? "Tabla copiada. Pégala en una hoja de Excel vacía." : "No se pudo copiar. Prueba con otro navegador.";
+});
+
+actualizar();
+})();
+</script>
+
+<!-- NOTAS: lo que va debajo de esta línea lo coloca el robot al final de la página, bajo «Compártela». -->
+Privacidad: la herramienta no registra ni envía ningún dato; todo se calcula en el navegador de quien la usa. Cómo se calcula: se ordenan de mayor a menor facturación y se van sumando. Son A los que reúnen el primer 80 % de la facturación (o el 70 %), B los que llegan hasta el 95 % (o el 90 %) y C el resto. El XYZ mide la regularidad con el coeficiente de variación mes a mes: X hasta 0,5, Y hasta 1 y Z por encima. Si un nombre aparece varias veces, se suman sus importes.
