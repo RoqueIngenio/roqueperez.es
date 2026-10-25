@@ -476,12 +476,12 @@ def enlace_limpio(url):
 
 
 def edicion_relacionada(pagina):
-    """Enlace y título de la edición relacionada, solo si ya está publicada (Listo).
-    Así una herramienta o un apunte no enlazan una edición programada que aún no existe."""
+    """Enlace y título de la edición relacionada, si ya está publicada (Listo) o programada en
+    Substack con su enlace (Tramitado). Las que están en preparación no se enlazan."""
     p = propiedad(pagina, "Edición relacionada")
     for rel in p.get("relation", [])[:1]:
         edicion = notion(f"pages/{rel['id']}")
-        if (propiedad(edicion, "Estado").get("status") or {}).get("name") != "Listo":
+        if (propiedad(edicion, "Estado").get("status") or {}).get("name") not in ("Listo", "Tramitado"):
             continue
         enlace = propiedad(edicion, "Enlace ").get("url") or propiedad(edicion, "Enlace").get("url")
         titulo = valor_texto(edicion, "Tarea")

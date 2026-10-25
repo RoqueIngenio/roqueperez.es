@@ -7,7 +7,7 @@
 .calc h2, .calc h3 { margin: 0; text-wrap: balance; }
 .calc p { margin: 0; }
 
-.calc .rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 36px; align-items: start; padding-bottom: 40px; }
+.calc .rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 36px; align-items: stretch; padding-bottom: 22px; }
 @media (max-width: 960px) { .calc .rejilla { grid-template-columns: minmax(0, 1fr); } }
 
 .calc .calc-paso { display: grid; gap: 14px; }
@@ -49,7 +49,17 @@
 .calc .privacidad b { color: var(--verde); }
 .calc .privacidad::before { content: "🔒"; flex: none; }
 
-.calc .panel { position: sticky; top: 90px; display: grid; gap: 18px; }
+.calc .panel { display: flex; flex-direction: column; gap: 22px; }
+.calc .tarjeta.tarjeta-curva { flex: 1; display: flex; flex-direction: column; min-height: 260px; }
+.calc .curva-lienzo { flex: 1; position: relative; min-height: 190px; }
+.calc .curva-lienzo .pareto { position: absolute; inset: 0; width: 100%; height: 100%; }
+.calc .pareja { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; padding-bottom: 22px; }
+.calc .pareja .tarjeta { align-content: start; }
+.calc .compartir-botones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+@media (max-width: 960px) {
+  .calc .curva-lienzo { flex: none; aspect-ratio: 16 / 11; min-height: 0; }
+  .calc .pareja, .calc .compartir-botones { grid-template-columns: minmax(0, 1fr); }
+}
 .calc .resultado {
   background: var(--principal); color: var(--papel); border-radius: var(--radio);
   padding: 26px 24px; display: grid; gap: 18px;
@@ -67,7 +77,7 @@
 .calc .tarjeta { background: var(--blanco); border: 2px solid var(--tinta); border-radius: 16px; padding: 20px; display: grid; gap: 14px; }
 .calc h3 { font-size: 1.15rem; font-weight: 700; }
 .calc .vacio { font-size: .92rem; color: var(--tinta-3); }
-.calc .pareto { width: 100%; height: auto; display: block; }
+.calc .pareto { display: block; }
 .calc .pareto text { font-family: var(--f-mono); font-size: 9px; fill: var(--tinta-3); }
 .calc .pareto .letra { font-family: var(--f-titulo); font-weight: 800; font-size: 13px; fill: var(--tinta); }
 .calc .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--tinta-2); }
@@ -93,7 +103,7 @@
 
 .calc .boton { justify-content: center; font: inherit; font-weight: 700; cursor: pointer; }
 .calc .boton-ancho { width: 100%; }
-.calc .compartir { display: grid; gap: 10px; }
+.calc .compartir { display: grid; gap: 10px; padding-bottom: 44px; }
 .calc .compartir-texto { width: 100%; min-height: 110px; font: inherit; font-size: .9rem; border: 2px solid var(--linea); border-radius: 12px; padding: 12px; background: var(--blanco); color: var(--tinta); }
 .calc .compartir-texto[hidden] { display: none; }
 .calc .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; min-height: 1.4em; }
@@ -114,7 +124,6 @@
 .calc .acum i::after { content: ""; display: block; height: 100%; width: var(--p); background: var(--dorado); }
 .calc .tabla-pie { display: flex; justify-content: center; }
 
-@media (max-width: 960px) { .calc .panel { position: static; } }
 @media (max-width: 420px) { .calc .datos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .calc .pegar { transition: none; } .calc .pegar:focus { transform: none; } }
 </style>
@@ -166,28 +175,32 @@
         <p class="equivale" id="equiv"></p>
       </div>
 
-      <div class="tarjeta">
+      <div class="tarjeta tarjeta-curva">
         <h3>Tu curva de Pareto</h3>
-        <div id="curva"><p class="vacio">Aquí verás cómo se reparte tu facturación.</p></div>
-      </div>
-
-      <div class="tarjeta">
-        <h3>¿Compran de forma regular?</h3>
-        <div id="xyz"><p class="vacio">Pega la facturación mes a mes (una columna por mes) para ver qué <span data-u="plural">clientes</span> compran de forma regular (X), con altibajos (Y) o a golpes (Z).</p></div>
-      </div>
-
-      <div class="tarjeta">
-        <h3>Qué hacer con cada grupo</h3>
-        <div class="grupos" id="grupos"></div>
-      </div>
-
-      <div class="compartir">
-        <button type="button" class="boton boton-principal boton-ancho" id="copy" data-goatcounter-click="analisis-abc-copiar-resultado">Copiar mi resultado para compartir</button>
-        <textarea class="compartir-texto" id="share-text" readonly hidden aria-label="Texto para compartir"></textarea>
-        <p class="aviso" id="toast" role="status"></p>
-        <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-abc-suscribirse">Suscribirse a Ingenio Lean →</a>
+        <div class="curva-lienzo" id="curva"><p class="vacio">Aquí verás cómo se reparte tu facturación.</p></div>
+        <div class="leyenda" id="leyenda" hidden><span><i style="background:var(--principal)"></i>Facturación acumulada</span><span><i style="background:var(--dorado)"></i>Corte de los A</span></div>
       </div>
     </aside>
+  </div>
+
+  <div class="pareja">
+    <div class="tarjeta">
+      <h3>¿Compran de forma regular?</h3>
+      <div id="xyz"><p class="vacio">Pega la facturación mes a mes (una columna por mes) para ver qué <span data-u="plural">clientes</span> compran de forma regular (X), con altibajos (Y) o a golpes (Z).</p></div>
+    </div>
+    <div class="tarjeta">
+      <h3>Qué hacer con cada grupo</h3>
+      <div class="grupos" id="grupos"></div>
+    </div>
+  </div>
+
+  <div class="compartir">
+    <div class="compartir-botones">
+      <button type="button" class="boton boton-principal boton-ancho" id="copy" data-goatcounter-click="analisis-abc-copiar-resultado">Copiar mi resultado para compartir</button>
+      <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-abc-suscribirse">Suscribirse a Ingenio Lean →</a>
+    </div>
+    <textarea class="compartir-texto" id="share-text" readonly hidden aria-label="Texto para compartir"></textarea>
+    <p class="aviso" id="toast" role="status"></p>
   </div>
 
   <section class="tabla-bloque" id="tabla-bloque" hidden>
@@ -325,7 +338,10 @@ function calcular(datos) {
 
 // ===== Pintar resultados =====
 function pintarCurva(r) {
-  const W = 320, H = 200, x0 = 34, x1 = 310, y0 = 172, y1 = 14;
+  // El dibujo toma la proporción del recuadro, para llenarlo sin deformar el texto
+  const caja = $("curva");
+  const W = 320, H = Math.max(180, Math.round(W * (caja.clientHeight || 200) / (caja.clientWidth || W)));
+  const x0 = 34, x1 = 310, y0 = H - 28, y1 = 14;
   const X = (f) => x0 + f * (x1 - x0), Y = (f) => y0 - f * (y0 - y1);
   const n = r.items.length;
   const fA = r.A.n / n, fB = (r.A.n + r.B.n) / n;
@@ -350,9 +366,10 @@ function pintarCurva(r) {
       <text x="${X(fA)}" y="${y0 + 12}" text-anchor="middle">${Math.round(fA * 100)}%</text>
       <text x="${x1}" y="${y0 + 12}" text-anchor="end">100%</text>
       <text x="${(x0 + x1) / 2}" y="${H - 2}" text-anchor="middle">% de ${u().plural} (de mayor a menor)</text>
-    </svg>
-    <div class="leyenda"><span><i style="background:var(--principal)"></i>Facturación acumulada</span><span><i style="background:var(--dorado)"></i>Corte de los A</span></div>`;
+    </svg>`;
+  $("leyenda").hidden = false;
 }
+new ResizeObserver(() => { if (res) pintarCurva(res); }).observe($("curva"));
 
 function pintarXYZ(r) {
   if (!r.conXYZ) {
@@ -428,6 +445,7 @@ function actualizar() {
     ["A", "B", "C"].forEach((c) => { $(`n-${c}`).textContent = "0"; $(`s-${c}`).textContent = c; });
     $("equiv").textContent = "";
     $("curva").innerHTML = `<p class="vacio">Aquí verás cómo se reparte tu facturación.</p>`;
+    $("leyenda").hidden = true;
     pintarXYZ({ conXYZ: false, periodos: 0 });
     pintarGrupos(null);
     $("tabla-bloque").hidden = true;
@@ -487,8 +505,7 @@ $("ejemplo").addEventListener("click", () => {
 // ===== Compartir =====
 function shareText() {
   const fA = res.A.n / res.items.length;
-  const extra = modo === "clientes" && res.items.length > 1 ? ` Y mi mayor cliente supone el ${pct(res.items[0].cuota)}.` : "";
-  return `El ${pct(fA)} de mis ${u().plural} genera el ${pct(res.A.cuota)} de la facturación.${extra}\n\nLo he calculado en un minuto con la herramienta gratuita de Ingenio Lean: ${SHARE_URL}`;
+  return `He sacado el análisis ABC de mis ${u().plural} en un minuto: el ${pct(fA)} de mis ${u().plural} (los A) genera el ${pct(res.A.cuota)} de mi facturación.\n\nSi quieres saber el tuyo, es gratis y tus datos no salen de tu ordenador: ${SHARE_URL}`;
 }
 async function copiar(texto, toast, ta) {
   try {
