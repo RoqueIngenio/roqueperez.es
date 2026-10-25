@@ -1,0 +1,281 @@
+<!-- Test «¿Cuánto depende tu empresa de ti?». El robot lo mete en la página
+     roqueperez.es/herramientas/test-dependencia/, entre la cabecera de la ficha y el cierre.
+     Las preguntas, respuestas y acciones se editan en la página de la herramienta en Notion:
+     el robot las escribe en lugar de /*CONTENIDO_NOTION*/. Si no puede, se usan las de POR_DEFECTO.
+     No se registra ninguna respuesta: todo ocurre en el navegador de quien hace el test. -->
+<style>
+.calc { --papel-78: rgba(242, 239, 225, 0.78); --papel-18: rgba(242, 239, 225, 0.18); font-size: 17px; }
+.calc h2, .calc h3 { margin: 0; text-wrap: balance; }
+.calc p { margin: 0; }
+
+.calc .test { max-width: 780px; display: grid; gap: 22px; padding-bottom: 44px; }
+.calc .privacidad { display: flex; gap: 10px; align-items: flex-start; font-size: .93rem; color: var(--tinta); background: var(--verde-claro); border-left: 4px solid var(--verde); border-radius: 12px; padding: 12px 16px; }
+.calc .privacidad::before { content: "🔒"; flex: none; }
+.calc .privacidad b { color: var(--verde); }
+
+.calc .tarjeta { background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 30px; display: grid; gap: 22px; box-shadow: 8px 8px 0 var(--papel-2); }
+@media (max-width: 560px) { .calc .tarjeta { padding: 22px 18px; } }
+.calc .progreso { display: grid; gap: 10px; }
+.calc .progreso-meta { display: flex; justify-content: space-between; gap: 12px; font-family: var(--f-mono); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-3); }
+.calc .progreso-meta b { color: var(--principal); }
+.calc .barra { height: 8px; background: var(--papel-2); border-radius: 999px; overflow: hidden; }
+.calc .barra i { display: block; height: 100%; background: var(--dorado); border-radius: 999px; transition: width .3s ease; }
+.calc .pregunta { font-size: clamp(1.35rem, 2.8vw, 1.75rem); font-weight: 700; line-height: 1.25; min-height: 2.5em; }
+.calc .opciones { display: grid; gap: 10px; }
+.calc .opcion {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; cursor: pointer;
+  font: inherit; font-size: 1rem; color: var(--tinta); background: var(--papel); border: 2px solid transparent; border-radius: 14px; padding: 14px 16px;
+  transition: border-color .15s, background .15s;
+}
+.calc .opcion:hover, .calc .opcion:focus-visible { border-color: var(--tinta); outline: none; }
+.calc .opcion[aria-pressed="true"] { background: var(--dorado-claro); border-color: var(--dorado); }
+.calc .opcion-letra { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--blanco); border: 2px solid var(--linea); font-family: var(--f-mono); font-weight: 700; font-size: .85rem; }
+.calc .opcion[aria-pressed="true"] .opcion-letra { background: var(--dorado); border-color: var(--tinta); }
+.calc .pie-test { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 24px; }
+.calc .pie-test small { color: var(--tinta-3); font-size: .85rem; }
+.calc .enlace-boton {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: .95rem; color: var(--principal);
+  text-decoration: underline; text-decoration-color: var(--dorado); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.calc .enlace-boton[hidden] { display: none; }
+
+.calc .resultado { background: var(--principal); color: var(--papel); border-radius: var(--radio); padding: 30px; display: grid; gap: 14px; }
+.calc .resultado .etiqueta { color: var(--dorado); margin-bottom: 0; }
+.calc .cifra { font-family: var(--f-titulo); font-weight: 800; font-size: clamp(3.2rem, 8vw, 4.6rem); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.calc .nivel { font-family: var(--f-titulo); font-weight: 800; font-size: clamp(1.3rem, 3vw, 1.65rem); line-height: 1.2; }
+.calc .nivel-texto { color: var(--papel-78); font-size: 1rem; max-width: 60ch; }
+.calc .escala { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 6px; }
+.calc .escala span { height: 6px; border-radius: 999px; background: var(--papel-18); }
+.calc .escala span.activo { background: var(--dorado); }
+
+.calc .pareja { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+@media (max-width: 760px) { .calc .pareja { grid-template-columns: minmax(0, 1fr); } }
+.calc .pareja .tarjeta { box-shadow: none; padding: 22px; gap: 16px; align-content: start; }
+.calc h3 { font-size: 1.15rem; font-weight: 700; }
+.calc .areas { display: grid; gap: 12px; }
+.calc .area { display: grid; gap: 5px; }
+.calc .area-meta { display: flex; justify-content: space-between; gap: 12px; font-size: .93rem; }
+.calc .area-meta b { font-family: var(--f-mono); }
+.calc .area .barra i { background: var(--principal); }
+.calc .area.alta .barra i { background: var(--dorado); }
+.calc .acciones { display: grid; gap: 14px; }
+.calc .accion { display: grid; gap: 4px; font-size: .94rem; padding-top: 14px; border-top: 1px solid var(--linea); }
+.calc .accion:first-child { border-top: 0; padding-top: 0; }
+.calc .accion b { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--principal); }
+
+.calc .boton { justify-content: center; font: inherit; font-weight: 700; cursor: pointer; }
+.calc .boton-ancho { width: 100%; }
+.calc .compartir-texto { width: 100%; min-height: 110px; font: inherit; font-size: .9rem; border: 2px solid var(--linea); border-radius: 12px; padding: 12px; background: var(--blanco); color: var(--tinta); }
+.calc .compartir-texto[hidden] { display: none; }
+.calc .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; }
+.calc .aviso:empty { display: none; }
+.calc [hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .calc .barra i { transition: none; } }
+</style>
+
+<div class="calc">
+  <div class="test">
+    <p class="privacidad"><span><b>Este test no registra ninguna de tus respuestas.</b> Se calcula en tu propio navegador: no se envía a ningún servidor ni se guarda en ningún sitio.</span></p>
+
+    <!-- Preguntas -->
+    <section class="tarjeta" id="pantalla-pregunta" aria-live="polite">
+      <div class="progreso">
+        <div class="progreso-meta"><span id="contador">Pregunta 1 de 12</span><b id="area-actual"></b></div>
+        <div class="barra"><i id="progreso" style="width:0%"></i></div>
+      </div>
+      <h2 class="pregunta" id="pregunta"></h2>
+      <div class="opciones" id="opciones" role="group" aria-labelledby="pregunta"></div>
+      <div class="pie-test">
+        <button type="button" class="enlace-boton" id="anterior" hidden>← Anterior</button>
+        <small>Contesta lo que pasa hoy, no lo que te gustaría.</small>
+      </div>
+    </section>
+
+    <!-- Resultado -->
+    <section id="pantalla-resultado" hidden>
+      <div class="test" style="padding-bottom:0">
+        <div class="resultado">
+          <span class="etiqueta">Tu empresa depende de ti en un</span>
+          <span class="cifra" id="cifra">0 %</span>
+          <span class="nivel" id="nivel"></span>
+          <p class="nivel-texto" id="nivel-texto"></p>
+          <div class="escala" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        </div>
+
+        <div class="pareja">
+          <div class="tarjeta">
+            <h3>Dónde más dependen de ti</h3>
+            <div class="areas" id="areas"></div>
+          </div>
+          <div class="tarjeta">
+            <h3>Por dónde empezar esta semana</h3>
+            <div class="acciones" id="acciones"></div>
+          </div>
+        </div>
+
+        <div class="pareja">
+          <button type="button" class="boton boton-principal boton-ancho" id="copy" data-goatcounter-click="test-dependencia-copiar-resultado">Copiar mi resultado para compartir</button>
+          <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="test-dependencia-suscribirse">Suscribirse a Ingenio Lean →</a>
+        </div>
+        <textarea class="compartir-texto" id="share-text" readonly hidden aria-label="Texto para compartir"></textarea>
+        <p class="aviso" id="toast" role="status"></p>
+        <div><button type="button" class="enlace-boton" id="repetir">↺ Repetir el test</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+const SHARE_URL = "https://roqueperez.es/herramientas/test-dependencia/";
+
+// Preguntas por área. Cada pregunta tiene 4 respuestas, de menos a más dependencia (0 a 3 puntos).
+// Se editan en Notion; estas son las de reserva por si el robot no pudiera leerlas.
+const POR_DEFECTO = [
+  { nombre: "🧭 Decisiones",
+    accion: "Esta semana, anota cada decisión que tomes en dos columnas: «solo yo puedo decidir esto» y «alguien de mi equipo podría haberlo resuelto». Con la segunda, define quién decide qué y hasta qué importe.",
+    preguntas: [
+      { texto: "Surge un problema en planta y tú no estás. ¿Qué pasa?", opciones: ["Lo resuelven y te lo cuentan después", "Lo resuelven, pero te llaman para confirmar", "Esperan a que vuelvas", "Te llaman, estés donde estés"] },
+      { texto: "De las decisiones que tomas en un día, ¿cuántas podría haber tomado alguien de tu equipo?", opciones: ["Casi ninguna", "Alguna", "La mitad", "La mayoría"] },
+      { texto: "¿Está claro quién decide qué, y hasta qué importe?", opciones: ["Sí, está escrito y se usa", "Existe, pero nadie lo mira", "Cada uno lo tiene en la cabeza", "No: todo pasa por mí"] }
+    ] },
+  { nombre: "⚙️ El día a día",
+    accion: "Elige a la persona que más te llama y pactad qué puede resolver sin consultarte. Revisadlo juntos al final de la semana.",
+    preguntas: [
+      { texto: "Te vas dos semanas de vacaciones sin móvil…", opciones: ["Todo sigue igual", "Algún retraso sin importancia", "Se acumulan cosas importantes", "Ni me lo planteo"] },
+      { texto: "¿Cuántas llamadas o mensajes de trabajo recibes fuera de horario a la semana?", opciones: ["Ninguno", "De 1 a 3", "De 4 a 10", "Más de 10"] },
+      { texto: "¿Quién sabe mejor dónde está cada cosa y cómo va cada pedido?", opciones: ["Cada responsable de su área", "Ellos, pero me preguntan para asegurarse", "Yo, aunque no esté en el día a día", "Solo yo"] }
+    ] },
+  { nombre: "📨 Información y firmas",
+    accion: "Apunta todo lo que firmas o apruebas durante una semana y tacha lo que no necesita tu firma. Fija un importe por debajo del cual firma el responsable.",
+    preguntas: [
+      { texto: "¿En cuántos correos te ponen en copia sin que tengas que hacer nada?", opciones: ["Casi ninguno", "Unos pocos", "Muchos", "No doy abasto"] },
+      { texto: "¿Qué tiene que pasar por tu firma?", opciones: ["Solo lo estratégico", "Además, los gastos importantes", "También las compras pequeñas y los permisos", "Prácticamente todo, hasta el pedido del café"] },
+      { texto: "¿Cómo están documentados los procesos clave?", opciones: ["Escritos y al día", "Algunos", "Pocos y desactualizados", "Están en mi cabeza"] }
+    ] },
+  { nombre: "👥 El equipo",
+    accion: "Escribe el procedimiento (POE) de la tarea que más tiempo te quita y entrégaselo a alguien de tu equipo. La próxima vez, que la haga él.",
+    preguntas: [
+      { texto: "Alguien de tu equipo propone una mejora. ¿Qué suele pasar?", opciones: ["La pone en marcha él", "La pone en marcha después de consultarte", "Te la trae para que decidas y la lances tú", "Casi nadie propone nada"] },
+      { texto: "¿Tienes a alguien preparado para cubrirte en tus funciones clave?", opciones: ["En casi todas", "En algunas", "En pocas", "En ninguna"] },
+      { texto: "Sinceramente: ¿piensas que «si no lo hago yo, no se hace bien»?", opciones: ["Nunca", "A veces", "A menudo", "Siempre"] }
+    ] }
+];
+const DE_NOTION = /*CONTENIDO_NOTION*/null;
+
+const NIVELES = [
+  { hasta: 25, nombre: "Empresa con vida propia",
+    texto: "Tu equipo decide y resuelve sin ti. Tu tiempo puede ir a lo que solo tú puedes hacer: pensar hacia dónde va la empresa." },
+  { hasta: 50, nombre: "Dependencia moderada",
+    texto: "Tu equipo funciona, pero todavía te mira para demasiadas cosas. Con unos criterios claros de quién decide qué, te quitarías buena parte." },
+  { hasta: 75, nombre: "Eres el cuello de botella",
+    texto: "Demasiadas cosas pasan por ti. Tu empresa avanza a la velocidad a la que tú puedes decidir, y eso frena su crecimiento." },
+  { hasta: 100, nombre: "Un negocio de autónomo exageradamente complejo",
+    texto: "Sin ti, la empresa se para. Lo que un día fue tu gran virtud, tenerlo todo bajo control, hoy es su límite." }
+];
+
+// ===== Preparación =====
+const valido = (a) => Array.isArray(a) && a.length && a.every((x) => x.nombre && Array.isArray(x.preguntas) && x.preguntas.length
+  && x.preguntas.every((p) => p.texto && Array.isArray(p.opciones) && p.opciones.length === 4));
+const AREAS = valido(DE_NOTION) ? DE_NOTION : POR_DEFECTO;
+const PREGUNTAS = AREAS.flatMap((a, ia) => a.preguntas.map((p) => ({ ...p, area: ia })));
+let respuestas = new Array(PREGUNTAS.length).fill(null);
+let actual = 0;
+let resultado = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (x) => `${Math.round(x)} %`;
+const sinEmoji = (s) => s.replace(/^[^\p{L}\p{N}«¿¡]+/u, "").trim();
+
+// ===== Pregunta =====
+function pintarPregunta() {
+  const p = PREGUNTAS[actual];
+  $("contador").textContent = `Pregunta ${actual + 1} de ${PREGUNTAS.length}`;
+  $("area-actual").textContent = sinEmoji(AREAS[p.area].nombre);
+  $("progreso").style.width = `${(actual / PREGUNTAS.length) * 100}%`;
+  $("pregunta").textContent = p.texto;
+  $("opciones").innerHTML = p.opciones.map((o, i) =>
+    `<button type="button" class="opcion" data-valor="${i}" aria-pressed="${respuestas[actual] === i}"><span class="opcion-letra">${"ABCD"[i]}</span><span>${esc(o)}</span></button>`).join("");
+  $("anterior").hidden = actual === 0;
+}
+
+function responder(valor) {
+  respuestas[actual] = valor;
+  $("opciones").querySelectorAll(".opcion").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.valor) === valor)));
+  setTimeout(() => {
+    if (actual < PREGUNTAS.length - 1) { actual++; pintarPregunta(); $("opciones").querySelector(".opcion").focus({ preventScroll: true }); }
+    else mostrarResultado();
+  }, 220);
+}
+
+// ===== Resultado =====
+function calcular() {
+  const total = respuestas.reduce((s, v) => s + v, 0) / (3 * PREGUNTAS.length) * 100;
+  const areas = AREAS.map((a, ia) => {
+    const vals = PREGUNTAS.map((p, i) => (p.area === ia ? respuestas[i] : null)).filter((v) => v !== null);
+    return { nombre: a.nombre, accion: a.accion, pct: vals.reduce((s, v) => s + v, 0) / (3 * vals.length) * 100 };
+  });
+  const nivel = NIVELES.findIndex((n) => Math.round(total) <= n.hasta);
+  return { total, areas, nivel };
+}
+
+function mostrarResultado() {
+  resultado = calcular();
+  const r = resultado, n = NIVELES[r.nivel];
+  $("progreso").style.width = "100%";
+  $("pantalla-pregunta").hidden = true;
+  $("pantalla-resultado").hidden = false;
+  $("cifra").textContent = pct(r.total);
+  $("nivel").textContent = n.nombre;
+  $("nivel-texto").textContent = n.texto;
+  document.querySelectorAll(".calc .escala span").forEach((s, i) => s.classList.toggle("activo", i <= r.nivel));
+  const orden = [...r.areas].sort((a, b) => b.pct - a.pct);
+  $("areas").innerHTML = orden.map((a, i) => `<div class="area${i < 2 && a.pct > 0 ? " alta" : ""}">
+      <div class="area-meta"><span>${esc(a.nombre)}</span><b>${pct(a.pct)}</b></div>
+      <div class="barra"><i style="width:${Math.max(2, a.pct)}%"></i></div>
+    </div>`).join("");
+  $("acciones").innerHTML = orden.slice(0, 2).filter((a) => a.accion).map((a) =>
+    `<div class="accion"><b>${esc(sinEmoji(a.nombre))}</b><span>${esc(a.accion)}</span></div>`).join("");
+  $("toast").textContent = "";
+  $("share-text").hidden = true;
+  $("pantalla-resultado").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: "test-dependencia-completado", title: "Test de dependencia completado", event: true });
+}
+
+// ===== Eventos =====
+$("opciones").addEventListener("click", (e) => { const b = e.target.closest(".opcion"); if (b) responder(Number(b.dataset.valor)); });
+document.addEventListener("keydown", (e) => {
+  if ($("pantalla-pregunta").hidden || e.altKey || e.ctrlKey || e.metaKey || /input|textarea/i.test(e.target.tagName)) return;
+  const i = "1234".indexOf(e.key) >= 0 ? "1234".indexOf(e.key) : "abcd".indexOf(e.key.toLowerCase());
+  if (i >= 0) responder(i);
+});
+$("anterior").addEventListener("click", () => { if (actual > 0) { actual--; pintarPregunta(); } });
+$("repetir").addEventListener("click", () => {
+  respuestas = new Array(PREGUNTAS.length).fill(null); actual = 0; resultado = null;
+  $("pantalla-resultado").hidden = true; $("pantalla-pregunta").hidden = false; pintarPregunta();
+  $("pantalla-pregunta").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+// ===== Compartir =====
+$("copy").addEventListener("click", async () => {
+  if (!resultado) return;
+  const n = NIVELES[resultado.nivel];
+  const texto = `He hecho el test «¿Cuánto depende tu empresa de ti?» en 2 minutos: mi resultado es un ${pct(resultado.total)}, «${n.nombre.toLowerCase()}». ¿Y la tuya? Es gratis y no registra tus respuestas: ${SHARE_URL}`;
+  const ta = $("share-text");
+  try {
+    await navigator.clipboard.writeText(texto);
+    ta.hidden = true;
+    $("toast").textContent = "Copiado. Pégalo en LinkedIn, WhatsApp o donde quieras.";
+  } catch (err) {
+    ta.value = texto; ta.hidden = false; ta.focus(); ta.select();
+    $("toast").textContent = "No se pudo copiar automáticamente: selecciona el texto y cópialo.";
+  }
+});
+
+pintarPregunta();
+})();
+</script>
+
+<!-- NOTAS: lo que va debajo de esta línea lo coloca el robot al final de la página, bajo «Compártela». -->
+Cómo se calcula: cada respuesta suma de 0 a 3 puntos según lo que depende de ti. El resultado es el porcentaje sobre el máximo posible, en total y por áreas. Es una orientación para reflexionar, no un diagnóstico. El test no registra ninguna respuesta.

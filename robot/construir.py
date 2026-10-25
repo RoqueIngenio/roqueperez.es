@@ -759,7 +759,7 @@ def herramientas_desde_notion():
             if url:
                 archivos.append({"nombre": a.get("name") or "archivo", "url": url})
         herramientas.append({
-            "nombre": nombre, "tipo": tipo, "slug": slug,
+            "id": f["id"], "nombre": nombre, "tipo": tipo, "slug": slug,
             "descripcion": valor_texto(f, "Descripción").strip(),
             "destacada": bool(propiedad(f, "Destacada").get("checkbox")),
             "orden": propiedad(f, "Orden").get("number"),
@@ -784,6 +784,29 @@ def botones_descarga(descargas, slug, principal=True):
     return botones
 
 
+def contenido_desde_notion(pagina_id):
+    """Lee las preguntas de un test escritas en el cuerpo de su página de Notion:
+    cada título (H2) es un área; una cita debajo, la acción recomendada de esa área;
+    cada elemento de lista numerada, una pregunta, con sus 4 respuestas como viñetas dentro,
+    de menos a más dependencia. Lo demás (avisos, párrafos) se ignora."""
+    areas = []
+    for b in hijos(pagina_id):
+        tipo = b["type"]
+        texto = texto_plano(b.get(tipo, {}).get("rich_text")).strip()
+        if tipo in ("heading_1", "heading_2", "heading_3") and texto:
+            areas.append({"nombre": texto, "accion": "", "preguntas": []})
+        elif tipo == "quote" and areas:
+            areas[-1]["accion"] = texto
+        elif tipo == "numbered_list_item" and areas and texto:
+            opciones = [texto_plano(h.get(h["type"], {}).get("rich_text")).strip()
+                        for h in (hijos(b["id"]) if b.get("has_children") else [])]
+            opciones = [o for o in opciones if o]
+            if len(opciones) == 4:
+                areas[-1]["preguntas"].append({"texto": texto, "opciones": opciones})
+    areas = [a for a in areas if a["preguntas"]]
+    return areas or None
+
+
 def preparar_herramienta(h):
     """Deja en _site/herramientas/<dirección>/ lo que necesita la ficha: el código de la calculadora
     o los archivos para descargar. Devuelve el HTML que va en el cuerpo de la ficha."""
@@ -805,6 +828,13 @@ def preparar_herramienta(h):
         if not codigo.exists():
             raise RuntimeError(f"falta {codigo.relative_to(RAIZ)}")
         cuerpo = codigo.read_text()
+        if "/*CONTENIDO_NOTION*/null" in cuerpo:  # textos editables desde la página de Notion (p. ej. un test)
+            contenido = contenido_desde_notion(h["id"])
+            if contenido:
+                datos = json.dumps(contenido, ensure_ascii=False).replace("</", "<\\/")
+                cuerpo = cuerpo.replace("/*CONTENIDO_NOTION*/null", datos, 1)
+            else:
+                print(f"Aviso: {h['slug']}: la página de Notion no tiene preguntas válidas; se usan las de reserva")
         if descargas:  # una calculadora con plantilla para trabajar sin conexión (p. ej. un Excel)
             extra = ('<section class="descarga descarga-extra">\n  <h2>¿Prefieres hacerlo en tu Excel?</h2>\n'
                      '  <p>Descarga la plantilla, pega tus datos y se calcula sola, sin conexión.</p>\n'
@@ -916,7 +946,7 @@ def listado_herramientas(herramientas):
     tarjetas, tipos = [], {}
     for h in herramientas:
         tipos[h["tipo"]] = tipos.get(h["tipo"], 0) + 1
-        accion = "Descargar gratis →" if h["tipo"] in TIPOS_DESCARGA else "Usar gratis →"
+        accion = "Descargar gratis →" if h["tipo"] in TIPOS_DESCARGA else "Hacer el test →" if h["tipo"] == "Test" else "Usar gratis →"
         buscar = para_buscar(" ".join([h["nombre"], h["descripcion"], h["tipo"]]))
         tarjetas.append(
             f'          <a class="apunte-tarjeta herramienta-tarjeta" href="{h["slug"]}/" data-tema="{clave_tema(h["tipo"])}" data-buscar="{html.escape(buscar)}">\n'
@@ -964,7 +994,7 @@ def herramientas_portada(herramientas):
         f'            <span class="herramienta-portada-tipo">{html.escape(h["tipo"])}</span>\n'
         f'            <h4>{html.escape(h["nombre"])}</h4>\n'
         + (f'            <p>{html.escape(h["descripcion"])}</p>\n' if h["descripcion"] else "")
-        + f'            <span class="edicion-fecha">{"Descargar →" if h["tipo"] in TIPOS_DESCARGA else "Usar gratis →"}</span>\n'
+        + f'            <span class="edicion-fecha">{"Descargar →" if h["tipo"] in TIPOS_DESCARGA else "Hacer el test →" if h["tipo"] == "Test" else "Usar gratis →"}</span>\n'
         "          </a>" for h in destacadas)
     return ('        <div class="ediciones-titulo aparece herramientas-portada-titulo">\n'
             '          <h3 data-texto="lean.herramientas-titulo">Herramientas para tu fábrica</h3>\n'
