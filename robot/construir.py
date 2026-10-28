@@ -50,6 +50,7 @@ DS_APUNTES = "3f22a7a0-ee64-8050-8e95-000b911a2f83"
 DS_PUBLICACIONES = "19c2a7a0-ee64-81ce-843d-000b3b7817fa"
 DS_ESTANTERIA = "ee45a84e-3008-415a-b2a4-1899803e0a41"
 DS_HERRAMIENTAS = "05a9d069-733a-4681-a6ae-7c109803420d"
+DS_ENLACES_DINERO = "8c677e5c-052f-48ce-8078-913d47d3f158"
 CODIGO_HERRAMIENTAS = RAIZ / "herramientas"  # una carpeta por herramienta: herramienta.html, descargas/, vista-previa.jpg, compartir.png
 NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
@@ -417,6 +418,45 @@ def estanteria(libros):
     return '        <div class="estanteria aparece">\n' + "\n".join(tarjetas) + "\n        </div>\n        "
 
 
+# ---------------------------------------------------------------- enlaces de Dinero con Ingenio
+
+def enlaces_dinero_desde_notion():
+    filas = consultar(DS_ENLACES_DINERO, {"property": "Visible", "checkbox": {"equals": True}})
+    enlaces = [{"producto": valor_texto(f, "Producto").strip(), "uso": valor_texto(f, "Para qué lo uso").strip(),
+                "enlace": (propiedad(f, "Enlace").get("url") or "").strip(), "ventaja": valor_texto(f, "Ventaja").strip(),
+                "bloques": [o["name"] for o in propiedad(f, "Bloque").get("multi_select") or []],
+                "orden": propiedad(f, "Orden").get("number")} for f in filas]
+    enlaces = [e for e in enlaces if e["producto"]]
+    enlaces.sort(key=lambda e: (e["orden"] is None, e["orden"] or 0, e["producto"]))
+    if not enlaces:
+        raise RuntimeError("Notion no devolvió enlaces")
+    return enlaces
+
+
+def tarjetas_enlaces_dinero(enlaces):
+    """Una tarjeta por producto. Sin enlace, sale como «Próximamente»."""
+    tarjetas = []
+    for e in enlaces:
+        nombre = html.escape(e["producto"])
+        partes = []
+        if e["bloques"]:
+            partes.append('<div class="afiliado-bloques">' + "".join(f"<span>{html.escape(b)}</span>" for b in e["bloques"]) + "</div>")
+        partes.append(f"<h2>{nombre}</h2>")
+        if e["uso"]:
+            partes.append(f"<p>{html.escape(e['uso'])}</p>")
+        if e["enlace"]:
+            if e["ventaja"]:
+                partes.append(f'<p class="afiliado-ventaja">{html.escape(e["ventaja"])}</p>')
+            partes.append(f'<a class="boton afiliado-boton" href="{html.escape(e["enlace"])}" target="_blank" rel="sponsored noopener" '
+                          f'data-goatcounter-click="afiliado-{a_slug(e["producto"])}" aria-label="Abrir cuenta en {nombre}">Abrir cuenta →</a>')
+            clase = "afiliado"
+        else:
+            partes.append('<span class="afiliado-sello">Próximamente</span>')
+            clase = "afiliado afiliado-pronto"
+        tarjetas.append(f'          <article class="{clase}">\n            ' + "\n            ".join(partes) + "\n          </article>")
+    return '        <div class="afiliados">\n' + "\n".join(tarjetas) + "\n        </div>\n        "
+
+
 # ---------------------------------------------------------------- apuntes
 
 def bloques_a_html(bloques, carpeta_img, prefijo_img):
@@ -676,7 +716,7 @@ def marcar_publicados(apuntes):
 
 def escribir_sitemap(apuntes, herramientas):
     hoy = dt.date.today().isoformat()
-    urls = [(f"{DOMINIO}/", hoy), (f"{DOMINIO}/apuntes-de-planta/", hoy), (f"{DOMINIO}/herramientas/", hoy)]
+    urls = [(f"{DOMINIO}/", hoy), (f"{DOMINIO}/apuntes-de-planta/", hoy), (f"{DOMINIO}/herramientas/", hoy), (f"{DOMINIO}/dinero/", hoy)]
     urls += [(f"{DOMINIO}/apuntes-de-planta/{a['slug']}/", a["fecha"]) for a in apuntes]
     urls += [(f"{DOMINIO}/herramientas/{h['slug']}/", h["fecha"]) for h in herramientas]
     filas = "".join(f"  <url>\n    <loc>{u}</loc>\n    <lastmod>{f}</lastmod>\n  </url>\n" for u, f in urls)
@@ -1091,6 +1131,14 @@ def main():
     (SALIDA / "index.html").write_text(volcar_textos(portada, textos))
     (SALIDA / "apuntes-de-planta" / "index.html").write_text(volcar_textos(blog, textos))
     (SALIDA / "herramientas" / "index.html").write_text(volcar_textos(plantilla_herr, textos))
+
+    # Enlaces de Dinero con Ingenio (página de la bio de Instagram, fuera del menú)
+    dinero = (SALIDA / "dinero" / "index.html").read_text()
+    enlaces = paso("enlaces_dinero_notion", enlaces_dinero_desde_notion)
+    if enlaces:
+        dinero = reemplazar_entre(dinero, "ENLACES", tarjetas_enlaces_dinero(enlaces))
+        estado["enlaces_dinero"] = len(enlaces)
+    (SALIDA / "dinero" / "index.html").write_text(volcar_textos(dinero, textos))
     escribir_sitemap(apuntes, publicadas)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
 

@@ -340,6 +340,55 @@ strong { font-weight: 700; }
 .canales a { display: inline-flex; align-items: center; gap: 8px; color: var(--verde); font-weight: 700; text-decoration: none; }
 .canales a:hover { text-decoration: underline; }
 
+/* Anotación de la sección Dinero con Ingenio → página de enlaces */
+.dinero-anotacion {
+  position: absolute; top: 26px; right: 30px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--blanco); border: 2px solid var(--tinta); border-radius: 12px; box-shadow: 4px 4px 0 var(--tinta);
+  padding: 9px 14px; transform: rotate(3deg);
+  font-family: var(--f-mono); font-size: .8rem; font-weight: 700; color: var(--verde); text-decoration: none;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.dinero-anotacion:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 6px 6px 0 var(--tinta); }
+@media (max-width: 900px) { .dinero-anotacion { position: static; justify-self: start; margin-bottom: 4px; transform: rotate(-2deg); } }
+
+/* Página de enlaces de Dinero con Ingenio (roqueperez.es/dinero/) */
+.dinero-enlaces-portada { padding: 56px 0 40px; background: var(--verde-claro); border-bottom: 2px solid var(--tinta); }
+.dinero-enlaces-portada .contenedor { max-width: 760px; }
+.dinero-enlaces-portada .etiqueta { color: var(--verde); }
+.dinero-enlaces-portada h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; line-height: 1.05; margin-bottom: 14px; }
+.dinero-enlaces-autor { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+.dinero-enlaces-autor img { flex: none; width: 72px; height: 72px; object-fit: cover; object-position: top; border-radius: 50%; background: var(--blanco); border: 2px solid var(--tinta); }
+.dinero-enlaces-autor a { font-family: var(--f-mono); font-weight: 700; font-size: .9rem; color: var(--verde); text-decoration: none; }
+.dinero-enlaces-autor a:hover { text-decoration: underline; }
+.dinero-enlaces-lista { padding: 36px 0 70px; }
+.dinero-enlaces-lista .contenedor { max-width: 760px; display: grid; gap: 22px; }
+.dinero-aviso { font-size: .92rem; color: var(--tinta-2); background: var(--blanco); border-left: 4px solid var(--verde); border-radius: 12px; padding: 14px 18px; }
+.afiliados { display: grid; gap: 18px; }
+.afiliado { background: var(--blanco); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 24px; display: grid; gap: 10px; box-shadow: 6px 6px 0 var(--verde-claro); }
+.afiliado h2 { font-size: 1.6rem; font-weight: 800; line-height: 1.1; margin: 0; }
+.afiliado p { color: var(--tinta-2); }
+.afiliado-bloques { display: flex; flex-wrap: wrap; gap: 6px; }
+.afiliado-bloques span { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--verde); background: var(--verde-claro); border-radius: 999px; padding: 3px 10px; }
+.afiliado-ventaja { font-size: .92rem; }
+.afiliado-ventaja::before { content: "🎁 "; }
+.afiliado-boton { justify-content: center; margin-top: 6px; background: var(--verde); border-color: var(--verde); color: var(--blanco); }
+.afiliado-boton:hover { box-shadow: 0 5px 0 var(--tinta); }
+.afiliado-pronto { box-shadow: none; border-style: dashed; }
+.afiliado-sello { justify-self: start; font-family: var(--f-mono); font-weight: 700; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--verde); border: 2px solid var(--verde); border-radius: 8px; padding: 6px 12px; transform: rotate(-3deg); margin-top: 6px; }
+.dinero-sistema { background: var(--verde-claro); border: 2px solid var(--tinta); border-radius: var(--radio); padding: 26px; display: grid; gap: 12px; justify-items: start; margin-top: 10px; }
+.dinero-sistema h2 { font-size: 1.45rem; font-weight: 800; margin: 0; }
+.dinero-sistema p { color: var(--tinta-2); }
+@media (max-width: 560px) {
+  .dinero-enlaces-portada { padding: 26px 0 26px; }
+  .dinero-enlaces-portada h1 { font-size: 2.1rem; }
+  .dinero-enlaces-portada .entradilla { font-size: 1.05rem; }
+  .dinero-enlaces-autor { margin-bottom: 16px; }
+  .dinero-enlaces-autor img { width: 56px; height: 56px; }
+  .afiliado, .dinero-sistema { padding: 20px 18px; }
+  .dinero-sistema .boton { width: 100%; justify-content: center; }
+}
+
 /* Apuntes de planta */
 .apuntes {
   display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center;
