@@ -357,10 +357,6 @@ strong { font-weight: 700; }
 .dinero-enlaces-portada .contenedor { max-width: 760px; }
 .dinero-enlaces-portada .etiqueta { color: var(--verde); }
 .dinero-enlaces-portada h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; line-height: 1.05; margin-bottom: 14px; }
-.dinero-enlaces-autor { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
-.dinero-enlaces-autor img { flex: none; width: 72px; height: 72px; object-fit: cover; object-position: top; border-radius: 50%; background: var(--blanco); border: 2px solid var(--tinta); }
-.dinero-enlaces-autor a { font-family: var(--f-mono); font-weight: 700; font-size: .9rem; color: var(--verde); text-decoration: none; }
-.dinero-enlaces-autor a:hover { text-decoration: underline; }
 .dinero-enlaces-lista { padding: 36px 0 70px; }
 .dinero-enlaces-lista .contenedor { max-width: 760px; display: grid; gap: 22px; }
 .dinero-aviso { font-size: .92rem; color: var(--tinta-2); background: var(--blanco); border-left: 4px solid var(--verde); border-radius: 12px; padding: 14px 18px; }
@@ -383,8 +379,6 @@ strong { font-weight: 700; }
   .dinero-enlaces-portada { padding: 26px 0 26px; }
   .dinero-enlaces-portada h1 { font-size: 2.1rem; }
   .dinero-enlaces-portada .entradilla { font-size: 1.05rem; }
-  .dinero-enlaces-autor { margin-bottom: 16px; }
-  .dinero-enlaces-autor img { width: 56px; height: 56px; }
   .afiliado, .dinero-sistema { padding: 20px 18px; }
   .dinero-sistema .boton { width: 100%; justify-content: center; }
 }
