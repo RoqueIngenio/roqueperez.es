@@ -1,5 +1,6 @@
 # Robot de la web roqueperez.es
 # Lee Notion (textos y apuntes) y Substack (ediciones), genera la web y la publica en GitHub Pages.
+# Al terminar avisa a Bing (IndexNow) de las páginas nuevas o cambiadas.
 # Primero pone al día la BBDD Publicaciones de Notion (Tramitado → Listo y enlaces de Substack que falten); después publica.
 # Se ejecuta:
 #   - cada día a las 6:15 UTC (8:15 en horario de verano, 7:15 en invierno; siempre después de la newsletter de las 7:00)
@@ -39,6 +40,10 @@ jobs:
           MARCAR_PUBLICADOS: si
         run: python3 robot/construir.py
 
+      - name: Preparar el aviso a Bing (IndexNow)
+        continue-on-error: true
+        run: python3 robot/indexnow.py preparar
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
@@ -48,3 +53,7 @@ jobs:
       - name: Publicar
         id: despliegue
         uses: actions/deploy-pages@v4
+
+      - name: Avisar a Bing de las páginas nuevas (IndexNow)
+        continue-on-error: true
+        run: python3 robot/indexnow.py avisar
