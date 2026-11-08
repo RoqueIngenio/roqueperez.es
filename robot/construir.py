@@ -724,6 +724,43 @@ def escribir_sitemap(apuntes, herramientas):
                                        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + filas + "</urlset>\n")
 
 
+def escribir_llms(apuntes, herramientas):
+    """llms.txt: resumen de la web para que las IA (ChatGPT, Claude, Perplexity…) entiendan quién es Roque y qué hay aquí."""
+    lineas = [
+        "# Roque Pérez Calvo",
+        "",
+        "> Ingeniero de operaciones industriales desde 2019 (mobiliario, automoción y reciclaje). Autor de Ingenio Lean, "
+        "la newsletter sobre Lean y mejora continua para quienes dirigen pymes industriales, y de Dinero con Ingenio, "
+        "sobre finanzas personales. Web en español, desde Alcoy (España).",
+        "",
+        "Todo el contenido es gratuito. Las herramientas calculan en el navegador: no guardan ni envían los datos que se introducen.",
+        "",
+        "## Páginas principales",
+        f"- [Portada: quién es Roque Pérez Calvo]({DOMINIO}/): trayectoria, Ingenio Lean, Dinero con Ingenio y contacto.",
+        f"- [Apuntes de planta]({DOMINIO}/apuntes-de-planta/): ideas cortas y prácticas sobre Lean, mejora continua y gestión de fábricas.",
+        f"- [Herramientas para tu fábrica]({DOMINIO}/herramientas/): calculadoras, tests y plantillas gratuitas para pymes industriales.",
+        "- [Newsletter Ingenio Lean](https://ingeniolean.substack.com): una edición por semana sobre Lean aplicado a pymes industriales.",
+        "",
+    ]
+    if herramientas:
+        lineas.append("## Herramientas")
+        lineas += [f"- [{h['nombre']}]({DOMINIO}/herramientas/{h['slug']}/)" + (f": {h['descripcion']}" if h["descripcion"] else "")
+                   for h in herramientas]
+        lineas.append("")
+    if apuntes:
+        lineas.append("## Apuntes de planta")
+        lineas += [f"- [{a['titulo']}]({DOMINIO}/apuntes-de-planta/{a['slug']}/)" + (f": {a['resumen']}" if a["resumen"] else "")
+                   for a in apuntes]
+        lineas.append("")
+    lineas += [
+        "## Otros",
+        f"- [Herramientas que Roque usa con su dinero]({DOMINIO}/dinero/): enlaces de afiliado de Dinero con Ingenio. No es asesoramiento financiero.",
+        "- [LinkedIn de Roque](https://www.linkedin.com/in/roquepc/)",
+        "",
+    ]
+    (SALIDA / "llms.txt").write_text("\n".join(lineas))
+
+
 def pagina_404(plantilla_blog):
     """Página de error con el diseño de la web. GitHub Pages la sirve en cualquier dirección que no exista."""
     cabeza = plantilla_blog[: plantilla_blog.index("<main>")]
@@ -1140,6 +1177,7 @@ def main():
         estado["enlaces_dinero"] = len(enlaces)
     (SALIDA / "dinero" / "index.html").write_text(volcar_textos(dinero, textos))
     escribir_sitemap(apuntes, publicadas)
+    escribir_llms(apuntes, publicadas)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
 
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":
