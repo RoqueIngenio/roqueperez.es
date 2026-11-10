@@ -608,7 +608,7 @@ def pagina_apunte(a, plantilla_blog, apuntes):
     cabeza = re.sub(r'<meta property="og:description" content="[^"]*">', f'<meta property="og:description" content="{descripcion}">', cabeza)
     cabeza = re.sub(r'<meta property="og:url" content="[^"]*">', f'<meta property="og:url" content="{url}">', cabeza)
     cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
-    pie = pie.replace('src="../', 'src="../../')
+    pie = pie.replace('src="../', 'src="../../').replace('href="../', 'href="../../')
     cabeza = cabeza.replace('<a href="index.html">Apuntes de planta</a>', '<a href="../index.html">Apuntes de planta</a>')
     datos_google = json_para_html({
         "@context": "https://schema.org", "@type": "BlogPosting", "headline": a["titulo"],
@@ -800,6 +800,7 @@ def pagina_404(plantilla_blog):
     cabeza = cabeza.replace('href="../', 'href="/').replace('src="../', 'src="/').replace('href="index.html"', 'href="/apuntes-de-planta/"')
     cabeza = cabeza.replace('href="/index.html', 'href="/')
     pie = pie.replace('src="../', 'src="/').replace('href="../', 'href="/').replace('href="/index.html', 'href="/')
+    pie = pie.replace('href="/aviso-legal/index.html"', 'href="/aviso-legal/"')
     cuerpo = """<main>
     <section class="blog-vacio">
       <div class="contenedor">
@@ -985,7 +986,7 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
         cabeza = re.sub(r'<meta property="og:image" content="[^"]*">', f'<meta property="og:image" content="{h["imagen"]}">', cabeza)
     cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
     cabeza = cabeza.replace('<a href="index.html">Herramientas</a>', '<a href="../index.html">Herramientas</a>')
-    pie = pie.replace('src="../', 'src="../../')
+    pie = pie.replace('src="../', 'src="../../').replace('href="../', 'href="../../')
     datos_google = json_para_html({
         "@context": "https://schema.org",
         "@type": "WebApplication" if h["tipo"] not in TIPOS_DESCARGA else "CreativeWork",
@@ -1223,6 +1224,8 @@ def main():
     escribir_sitemap(apuntes, publicadas)
     escribir_llms(apuntes, publicadas)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
+    legal = SALIDA / "aviso-legal" / "index.html"
+    legal.write_text(volcar_textos(legal.read_text(), textos))
 
     comprobar_fuentes()
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":

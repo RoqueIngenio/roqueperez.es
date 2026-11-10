@@ -60,6 +60,14 @@ try {
   console.warn("No se pudieron cargar los textos de textos.js:", error);
 }
 
+// Correos de contacto: en el código van partidos (nombre y dominio por separado) para que los
+// robots de spam no los recojan. Aquí se montan, y el visitante los ve y los pulsa como siempre.
+document.querySelectorAll("[data-correo]").forEach((enlace) => {
+  const correo = `${enlace.dataset.correo}@${enlace.dataset.dominio}`;
+  enlace.href = `mailto:${correo}`;
+  (enlace.querySelector("strong") || enlace).textContent = correo;
+});
+
 // Menú del móvil: abrir y cerrar
 const botonMenu = document.querySelector(".boton-menu");
 const menu = document.querySelector(".menu");

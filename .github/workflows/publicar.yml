@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  actions: write  # solo para el paso «Mantener activa la ejecución diaria»
   pages: write
   id-token: write
 
@@ -54,6 +55,15 @@ jobs:
       - name: Publicar
         id: despliegue
         uses: actions/deploy-pages@v4
+
+      # GitHub apaga las ejecuciones programadas tras 60 días sin cambios en el repositorio.
+      # Volver a activar el flujo pone ese contador a cero, así que el robot no se para nunca.
+      - name: Mantener activa la ejecución diaria
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/publicar.yml/enable"
 
       - name: Avisar a Bing de las páginas nuevas (IndexNow)
         continue-on-error: true
