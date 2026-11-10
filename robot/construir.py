@@ -15,8 +15,11 @@ Antes de todo eso, pone al día la BBDD Publicaciones de Notion:
   - pasa a "Listo" lo que está en "Tramitado" con fecha de publicación de hoy o anterior (hora de España)
   - rellena el "Enlace" de las ediciones de la newsletter que lo tengan vacío, buscándolas en Substack por su número
 
-Si una fuente falla, la web se publica igualmente con lo que ya tenía y el
-fallo queda anotado en _site/robot-estado.json.
+Cada petición se reintenta hasta tres veces si el fallo es pasajero. Si aun así Notion no
+responde, el robot se detiene sin publicar y la web se queda como estaba (ver
+«comprobar_fuentes»): publicar sin Notion borraría los apuntes y las herramientas.
+Si lo que falla es Substack, se publica igualmente con las ediciones de Notion.
+El resultado de cada ejecución queda anotado en _site/robot-estado.json.
 
 Solo usa la biblioteca estándar de Python: no hay nada que instalar.
 """
@@ -29,6 +32,7 @@ import os
 import re
 import shutil
 import sys
+import time
 import traceback
 import unicodedata
 import urllib.error
@@ -64,15 +68,40 @@ estado = {"fecha": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"
 
 # ---------------------------------------------------------------- utilidades
 
-def pedir(url, metodo="GET", datos=None, cabeceras=None):
+PASAJEROS = (429, 500, 502, 503, 504)  # fallos que suelen arreglarse solos al reintentar
+
+
+def pedir(url, metodo="GET", datos=None, cabeceras=None, intentos=3, espera=30):
+    """Hace una petición y devuelve la respuesta. Si el fallo es pasajero (servidor saturado,
+    corte de red), lo reintenta un par de veces antes de darse por vencido."""
     cuerpo = json.dumps(datos).encode() if datos is not None else None
     peticion = urllib.request.Request(url, data=cuerpo, method=metodo, headers=cabeceras or {})
     if cuerpo is not None:
         peticion.add_header("Content-Type", "application/json")
     if not peticion.has_header("User-agent"):
         peticion.add_header("User-Agent", NAVEGADOR)
-    with urllib.request.urlopen(peticion, timeout=30) as r:
-        return r.read()
+    for intento in range(1, intentos + 1):
+        try:
+            with urllib.request.urlopen(peticion, timeout=espera) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code not in PASAJEROS or intento == intentos:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if intento == intentos:
+                raise
+        time.sleep(3 * intento)
+
+
+def enlace_seguro(url):
+    """Solo se publican enlaces http(s): nada de «javascript:» ni direcciones raras llegadas de Notion."""
+    url = (url or "").strip()
+    return url if url.lower().startswith(("https://", "http://")) else ""
+
+
+def json_para_html(datos):
+    """JSON listo para ir dentro de una etiqueta <script>, sin que un «</script>» en un texto pueda cerrarla."""
+    return json.dumps(datos, ensure_ascii=False).replace("</", "<\\/")
 
 
 def notion(ruta, metodo="GET", datos=None):
@@ -363,7 +392,7 @@ def ediciones_desde_notion():
         fecha = valor_fecha(f, "Fecha Publicación")
         if re.match(r"^\d+\.", titulo) and fecha:
             ediciones.append({"titulo": titulo, "subtitulo": "", "fecha": fecha,
-                              "enlace": enlace_limpio(propiedad(f, "Enlace ").get("url")) or f"{SUBSTACK}/archive"})
+                              "enlace": enlace_seguro(enlace_limpio(propiedad(f, "Enlace ").get("url"))) or f"{SUBSTACK}/archive"})
     ediciones.sort(key=lambda e: e["fecha"], reverse=True)
     if not ediciones:
         raise RuntimeError("Notion no devolvió ediciones")
@@ -423,7 +452,7 @@ def estanteria(libros):
 def enlaces_dinero_desde_notion():
     filas = consultar(DS_ENLACES_DINERO, {"property": "Visible", "checkbox": {"equals": True}})
     enlaces = [{"producto": valor_texto(f, "Producto").strip(), "uso": valor_texto(f, "Para qué lo uso").strip(),
-                "enlace": (propiedad(f, "Enlace").get("url") or "").strip(), "ventaja": valor_texto(f, "Ventaja").strip(), "boton": valor_texto(f, "Botón").strip(),
+                "enlace": enlace_seguro(propiedad(f, "Enlace").get("url")), "ventaja": valor_texto(f, "Ventaja").strip(), "boton": valor_texto(f, "Botón").strip(),
                 "bloques": [o["name"] for o in propiedad(f, "Bloque").get("multi_select") or []],
                 "orden": propiedad(f, "Orden").get("number")} for f in filas]
     enlaces = [e for e in enlaces if e["producto"]]
@@ -523,7 +552,7 @@ def edicion_relacionada(pagina):
         edicion = notion(f"pages/{rel['id']}")
         if (propiedad(edicion, "Estado").get("status") or {}).get("name") not in ("Listo", "Tramitado"):
             continue
-        enlace = propiedad(edicion, "Enlace ").get("url") or propiedad(edicion, "Enlace").get("url")
+        enlace = enlace_seguro(propiedad(edicion, "Enlace ").get("url") or propiedad(edicion, "Enlace").get("url"))
         titulo = valor_texto(edicion, "Tarea")
         if enlace:
             return enlace_limpio(enlace), titulo
@@ -581,11 +610,11 @@ def pagina_apunte(a, plantilla_blog, apuntes):
     cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
     pie = pie.replace('src="../', 'src="../../')
     cabeza = cabeza.replace('<a href="index.html">Apuntes de planta</a>', '<a href="../index.html">Apuntes de planta</a>')
-    datos_google = json.dumps({
+    datos_google = json_para_html({
         "@context": "https://schema.org", "@type": "BlogPosting", "headline": a["titulo"],
         "description": a["resumen"], "datePublished": a["fecha"], "url": url, "inLanguage": "es",
         "author": {"@type": "Person", "name": "Roque Pérez Calvo", "url": f"{DOMINIO}/"},
-    }, ensure_ascii=False)
+    })
     cabeza = cabeza.replace("</head>", f'  <script type="application/ld+json">{datos_google}</script>\n</head>')
     edicion = ""
     if a["enlace"]:
@@ -739,7 +768,7 @@ def escribir_llms(apuntes, herramientas):
         f"- [Portada: quién es Roque Pérez Calvo]({DOMINIO}/): trayectoria, Ingenio Lean, Dinero con Ingenio y contacto.",
         f"- [Apuntes de planta]({DOMINIO}/apuntes-de-planta/): ideas cortas y prácticas sobre Lean, mejora continua y gestión de fábricas.",
         f"- [Herramientas para tu fábrica]({DOMINIO}/herramientas/): calculadoras, tests y plantillas gratuitas para pymes industriales.",
-        "- [Newsletter Ingenio Lean](https://ingeniolean.substack.com): una edición por semana sobre Lean aplicado a pymes industriales.",
+        "- [Newsletter Ingenio Lean](https://ingeniolean.substack.com): una edición cada dos lunes sobre Lean aplicado a pymes industriales.",
         "",
     ]
     if herramientas:
@@ -908,7 +937,7 @@ def preparar_herramienta(h):
         if "/*CONTENIDO_NOTION*/null" in cuerpo:  # textos editables desde la página de Notion (p. ej. un test)
             contenido = contenido_desde_notion(h["id"])
             if contenido:
-                datos = json.dumps(contenido, ensure_ascii=False).replace("</", "<\\/")
+                datos = json_para_html(contenido)
                 cuerpo = cuerpo.replace("/*CONTENIDO_NOTION*/null", datos, 1)
             else:
                 print(f"Aviso: {h['slug']}: la página de Notion no tiene preguntas válidas; se usan las de reserva")
@@ -923,7 +952,7 @@ def preparar_herramienta(h):
     if not descargas:
         for a in h["archivos"]:
             nombre = re.sub(r"[^\w.\-]+", "-", unicodedata.normalize("NFKD", a["nombre"]).encode("ascii", "ignore").decode()).strip("-").lower() or "archivo"
-            datos = urllib.request.urlopen(urllib.request.Request(a["url"], headers={"User-Agent": NAVEGADOR}), timeout=60).read()
+            datos = pedir(a["url"], espera=60)
             (carpeta / nombre).write_bytes(datos)
             descargas.append((nombre, len(datos)))
     if not descargas:
@@ -957,13 +986,13 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
     cabeza = cabeza.replace('href="../', 'href="../../').replace('src="../', 'src="../../')
     cabeza = cabeza.replace('<a href="index.html">Herramientas</a>', '<a href="../index.html">Herramientas</a>')
     pie = pie.replace('src="../', 'src="../../')
-    datos_google = json.dumps({
+    datos_google = json_para_html({
         "@context": "https://schema.org",
         "@type": "WebApplication" if h["tipo"] not in TIPOS_DESCARGA else "CreativeWork",
         "name": h["nombre"], "description": h["descripcion"], "url": url, "inLanguage": "es",
         "isAccessibleForFree": True, "dateModified": h["fecha"],
         "author": {"@type": "Person", "name": "Roque Pérez Calvo", "url": f"{DOMINIO}/"},
-    }, ensure_ascii=False)
+    })
     cabeza = cabeza.replace("</head>", f'  <script type="application/ld+json">{datos_google}</script>\n</head>')
 
     num = numero_edicion(h["titulo_edicion"] or "")
@@ -1026,7 +1055,7 @@ def listado_herramientas(herramientas):
         accion = "Descargar gratis →" if h["tipo"] in TIPOS_DESCARGA else "Hacer el test →" if h["tipo"] == "Test" else "Usar gratis →"
         buscar = para_buscar(" ".join([h["nombre"], h["descripcion"], h["tipo"]]))
         tarjetas.append(
-            f'          <a class="apunte-tarjeta herramienta-tarjeta" href="{h["slug"]}/" data-tema="{clave_tema(h["tipo"])}" data-buscar="{html.escape(buscar)}">\n'
+            f'          <a class="apunte-tarjeta herramienta-tarjeta" href="{h["slug"]}/" data-tema="{html.escape(clave_tema(h["tipo"]))}" data-buscar="{html.escape(buscar)}">\n'
             f'            <span class="etiqueta">{html.escape(h["tipo"])}</span>\n'
             f'            <h2>{html.escape(h["nombre"])}</h2>\n'
             + (f'            <p>{html.escape(h["descripcion"])}</p>\n' if h["descripcion"] else "")
@@ -1036,7 +1065,7 @@ def listado_herramientas(herramientas):
     filtros = ""
     if len(tipos) > 1:
         botones = [f'<button type="button" class="filtro activo" data-tema="" aria-pressed="true">Todas <span>{len(herramientas)}</span></button>']
-        botones += [f'<button type="button" class="filtro" data-tema="{clave_tema(t)}" aria-pressed="false">{html.escape(t)} <span>{n}</span></button>'
+        botones += [f'<button type="button" class="filtro" data-tema="{html.escape(clave_tema(t))}" aria-pressed="false">{html.escape(t)} <span>{n}</span></button>'
                     for t, n in sorted(tipos.items())]
         filtros = ('          <div class="buscador-temas" role="group" aria-label="Filtrar por tipo">\n            '
                    + "\n            ".join(botones) + "\n          </div>\n")
@@ -1094,10 +1123,25 @@ def paso(nombre, funcion):
         return None
 
 
+def comprobar_fuentes():
+    """Si Notion ha fallado, no se publica: la web se queda como estaba hasta la siguiente ejecución.
+    Publicar sin Notion dejaría la web sin apuntes ni herramientas (darían error 404 en Google) y con
+    textos y ediciones antiguos. GitHub avisa por correo de la ejecución fallida.
+    En local, sin la clave de Notion, no se aplica: se genera la vista previa con lo que hay."""
+    fallos = {k: v for k, v in estado.items() if k.endswith("_notion") and str(v).startswith("error")}
+    if fallos and NOTION_TOKEN:
+        print(json.dumps(estado, ensure_ascii=False, indent=2))
+        sys.exit("No se publica: Notion ha fallado en " + ", ".join(fallos) + ". La web se queda como estaba.")
+
+
 def main():
     if SALIDA.exists():
         shutil.rmtree(SALIDA)
     shutil.copytree(RAIZ, SALIDA, ignore=shutil.ignore_patterns(".*", "_site", "robot"))
+    # Las fotos originales en PNG solo sirven para generar las imágenes de compartir: la web usa las WebP
+    for foto in (SALIDA / "img").glob("*.png"):
+        if foto.with_suffix(".webp").exists():
+            foto.unlink()
     # Las carpetas de cada herramienta solo se publican si están en Publicado: las monta el robot más abajo
     for carpeta in (SALIDA / "herramientas").iterdir():
         if carpeta.is_dir():
@@ -1180,6 +1224,7 @@ def main():
     escribir_llms(apuntes, publicadas)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
 
+    comprobar_fuentes()
     if apuntes and os.environ.get("MARCAR_PUBLICADOS") == "si":
         paso("marcar_publicados", lambda: marcar_publicados(apuntes))
 
