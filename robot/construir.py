@@ -423,7 +423,7 @@ def estanteria(libros):
 def enlaces_dinero_desde_notion():
     filas = consultar(DS_ENLACES_DINERO, {"property": "Visible", "checkbox": {"equals": True}})
     enlaces = [{"producto": valor_texto(f, "Producto").strip(), "uso": valor_texto(f, "Para qué lo uso").strip(),
-                "enlace": (propiedad(f, "Enlace").get("url") or "").strip(), "ventaja": valor_texto(f, "Ventaja").strip(),
+                "enlace": (propiedad(f, "Enlace").get("url") or "").strip(), "ventaja": valor_texto(f, "Ventaja").strip(), "boton": valor_texto(f, "Botón").strip(),
                 "bloques": [o["name"] for o in propiedad(f, "Bloque").get("multi_select") or []],
                 "orden": propiedad(f, "Orden").get("number")} for f in filas]
     enlaces = [e for e in enlaces if e["producto"]]
@@ -448,7 +448,7 @@ def tarjetas_enlaces_dinero(enlaces):
             if e["ventaja"]:
                 partes.append(f'<p class="afiliado-ventaja">{html.escape(e["ventaja"])}</p>')
             partes.append(f'<a class="boton afiliado-boton" href="{html.escape(e["enlace"])}" target="_blank" rel="sponsored noopener" '
-                          f'data-goatcounter-click="afiliado-{a_slug(e["producto"])}" aria-label="Abrir cuenta en {nombre}">Abrir cuenta →</a>')
+                          f'data-goatcounter-click="afiliado-{a_slug(e["producto"])}" aria-label="{nombre}">{html.escape(e["boton"] or "Abrir cuenta →")}</a>')
             clase = "afiliado"
         else:
             partes.append('<span class="afiliado-sello">Próximamente</span>')
