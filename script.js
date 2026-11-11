@@ -189,3 +189,19 @@ if (location.protocol === "file:") {
     formulario.replaceWith(aviso);
   }
 }
+
+// Botón discreto para volver arriba: aparece al bajar un poco
+const volverArriba = document.createElement("button");
+volverArriba.type = "button";
+volverArriba.className = "volver-arriba";
+volverArriba.setAttribute("aria-label", "Volver arriba");
+volverArriba.innerHTML =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"></polyline></svg>';
+volverArriba.addEventListener("click", () => {
+  window.scrollTo({ top: 0 });
+  document.querySelector(".logo")?.focus({ preventScroll: true });
+});
+document.body.appendChild(volverArriba);
+const mostrarVolverArriba = () => volverArriba.classList.toggle("visible", window.scrollY > 600);
+window.addEventListener("scroll", mostrarVolverArriba, { passive: true });
+mostrarVolverArriba();

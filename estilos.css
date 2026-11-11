@@ -617,3 +617,40 @@ strong { font-weight: 700; }
 @media (max-width: 960px) { .herramienta-cierre .contenedor { padding-bottom: 110px; } }
 @media (max-width: 760px) { .descarga { padding: 24px 20px; } }
 .herramienta-notas { flex-basis: 100%; font-size: .82rem; line-height: 1.5; color: var(--tinta-3); max-width: 760px; }
+
+/* ===================== ACCESIBILIDAD Y AYUDAS ===================== */
+/* «Saltar al contenido»: invisible hasta que se llega con el tabulador */
+.saltar-contenido {
+  position: absolute; left: 16px; top: 12px; z-index: 100;
+  background: var(--tinta); color: var(--papel); font-weight: 700; font-size: 0.95rem;
+  padding: 10px 18px; border-radius: 10px; text-decoration: none;
+  transform: translateY(-160%);
+}
+.saltar-contenido:focus { transform: none; outline: 3px solid var(--dorado); outline-offset: 2px; }
+main:focus { outline: none; }
+
+/* Botón discreto para volver arriba */
+.volver-arriba {
+  position: fixed; right: 20px; bottom: 20px; z-index: 40;
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center;
+  background: var(--blanco); color: var(--tinta); border: 1px solid var(--linea);
+  box-shadow: 0 4px 14px rgba(29, 53, 73, 0.12);
+  opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: opacity 0.25s, transform 0.25s, visibility 0.25s, background 0.2s;
+}
+.volver-arriba.visible { opacity: 0.85; visibility: visible; transform: none; }
+.volver-arriba:hover { opacity: 1; background: var(--dorado); }
+.volver-arriba:focus-visible { opacity: 1; outline: 3px solid var(--dorado); outline-offset: 3px; }
+.volver-arriba svg { width: 18px; height: 18px; }
+@media (max-width: 760px) { .volver-arriba { right: 14px; bottom: 14px; width: 40px; height: 40px; } }
+@media (prefers-reduced-motion: reduce) { .volver-arriba { transition: none; } }
+
+/* Enlace al feed RSS del blog */
+.rss-enlace {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 18px;
+  font-family: var(--f-mono); font-size: 0.85rem; color: var(--tinta-2); text-decoration: none;
+  border-bottom: 1px solid var(--linea);
+}
+.rss-enlace::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--dorado); }
+.rss-enlace:hover { color: var(--tinta); border-bottom-color: var(--dorado); }

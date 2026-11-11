@@ -39,7 +39,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from email.utils import parsedate_to_datetime
+from email.utils import format_datetime, parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -595,7 +595,7 @@ def apuntes_desde_notion():
 
 def pagina_apunte(a, plantilla_blog, apuntes):
     """Usa la cabecera y el pie de la página del blog para mantener el diseño."""
-    cabeza = plantilla_blog[: plantilla_blog.index("<main>")]
+    cabeza = plantilla_blog[: plantilla_blog.index("<main")]
     pie = plantilla_blog[plantilla_blog.index("</main>"):]
     titulo = html.escape(a["titulo"])
     descripcion = html.escape(a["resumen"] or a["titulo"])
@@ -623,7 +623,7 @@ def pagina_apunte(a, plantilla_blog, apuntes):
                    f'<p>Lo cuento con calma en <strong>{nombre}</strong>, una de las ediciones de Ingenio Lean.</p>'
                    f'<a class="boton boton-principal" href="{html.escape(a["enlace"])}" target="_blank" rel="noopener">Leer la edición completa →</a></aside>')
     meta = " · ".join(x for x in [fecha_bonita(a["fecha"]), a["tema"]] if x)
-    cuerpo = f"""<main>
+    cuerpo = f"""<main id="contenido" tabindex="-1">
     <article class="apunte">
       <div class="contenedor apunte-contenedor">
         <a class="apunte-volver" href="../index.html">← Todos los apuntes</a>
@@ -753,6 +753,39 @@ def escribir_sitemap(apuntes, herramientas):
                                        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + filas + "</urlset>\n")
 
 
+def escribir_feed(apuntes):
+    """Feed RSS de los Apuntes de planta (apuntes-de-planta/feed.xml), con el apunte completo."""
+    def cdata(texto):
+        return "<![CDATA[" + texto.replace("]]>", "]]]]><![CDATA[>") + "]]>"
+    items = []
+    for a in apuntes[:20]:
+        url = f"{DOMINIO}/apuntes-de-planta/{a['slug']}/"
+        fecha = dt.datetime.fromisoformat(a["fecha"]).replace(hour=7, tzinfo=ZoneInfo("Europe/Madrid"))
+        cuerpo = a["cuerpo"].replace('src="img/', f'src="{url}img/').replace('href="../', f'href="{DOMINIO}/apuntes-de-planta/')
+        items.append(f"""    <item>
+      <title>{html.escape(a["titulo"])}</title>
+      <link>{url}</link>
+      <guid isPermaLink="true">{url}</guid>
+      <pubDate>{format_datetime(fecha)}</pubDate>
+      <description>{html.escape(a["resumen"] or a["titulo"])}</description>
+      <content:encoded>{cdata(cuerpo)}</content:encoded>
+    </item>""")
+    ultima = format_datetime(dt.datetime.fromisoformat(apuntes[0]["fecha"]).replace(hour=7, tzinfo=ZoneInfo("Europe/Madrid")))
+    (SALIDA / "apuntes-de-planta" / "feed.xml").write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Apuntes de planta · Roque Pérez Calvo</title>
+    <link>{DOMINIO}/apuntes-de-planta/</link>
+    <atom:link href="{DOMINIO}/apuntes-de-planta/feed.xml" rel="self" type="application/rss+xml"/>
+    <description>Ideas cortas sobre Lean, mejora continua y cómo hacer que una fábrica funcione mejor.</description>
+    <language>es-ES</language>
+    <lastBuildDate>{ultima}</lastBuildDate>
+{chr(10).join(items)}
+  </channel>
+</rss>
+""")
+
+
 def escribir_llms(apuntes, herramientas):
     """llms.txt: resumen de la web para que las IA (ChatGPT, Claude, Perplexity…) entiendan quién es Roque y qué hay aquí."""
     lineas = [
@@ -792,7 +825,7 @@ def escribir_llms(apuntes, herramientas):
 
 def pagina_404(plantilla_blog):
     """Página de error con el diseño de la web. GitHub Pages la sirve en cualquier dirección que no exista."""
-    cabeza = plantilla_blog[: plantilla_blog.index("<main>")]
+    cabeza = plantilla_blog[: plantilla_blog.index("<main")]
     pie = plantilla_blog[plantilla_blog.index("</main>"):]
     cabeza = re.sub(r"<title>.*?</title>", "<title>Página no encontrada · Roque Pérez Calvo</title>", cabeza)
     cabeza = re.sub(r'\s*<link rel="canonical" href="[^"]*">', '\n  <meta name="robots" content="noindex">', cabeza)
@@ -801,7 +834,7 @@ def pagina_404(plantilla_blog):
     cabeza = cabeza.replace('href="/index.html', 'href="/')
     pie = pie.replace('src="../', 'src="/').replace('href="../', 'href="/').replace('href="/index.html', 'href="/')
     pie = pie.replace('href="/aviso-legal/index.html"', 'href="/aviso-legal/"')
-    cuerpo = """<main>
+    cuerpo = """<main id="contenido" tabindex="-1">
     <section class="blog-vacio">
       <div class="contenedor">
         <span class="sello">Error 404</span>
@@ -971,7 +1004,7 @@ def preparar_herramienta(h):
 
 def pagina_herramienta(h, cuerpo_herramienta, plantilla):
     """Ficha de una herramienta con la cabecera y el pie de la biblioteca."""
-    cabeza = plantilla[: plantilla.index("<main>")]
+    cabeza = plantilla[: plantilla.index("<main")]
     pie = plantilla[plantilla.index("</main>"):]
     nombre = html.escape(h["nombre"])
     descripcion = html.escape(h["descripcion"] or h["nombre"])
@@ -1016,7 +1049,7 @@ def pagina_herramienta(h, cuerpo_herramienta, plantilla):
                  f'          <a href="https://wa.me/?text={q(h["nombre"] + " " + url, safe="")}" target="_blank" rel="noopener" data-goatcounter-click="compartir-whatsapp-{h["slug"]}">WhatsApp</a>\n'
                  f'          <button type="button" data-copiar-enlace="{url}">Copiar enlace</button>\n'
                  f'        </div>')
-    cuerpo = f"""<main>
+    cuerpo = f"""<main id="contenido" tabindex="-1">
     <section class="herramienta-intro">
       <div class="contenedor">
         <a class="apunte-volver" href="../index.html">← Todas las herramientas</a>
@@ -1223,6 +1256,8 @@ def main():
     (SALIDA / "dinero" / "index.html").write_text(volcar_textos(dinero, textos))
     escribir_sitemap(apuntes, publicadas)
     escribir_llms(apuntes, publicadas)
+    if apuntes:
+        escribir_feed(apuntes)
     (SALIDA / "404.html").write_text(volcar_textos(pagina_404(blog), textos))
     legal = SALIDA / "aviso-legal" / "index.html"
     legal.write_text(volcar_textos(legal.read_text(), textos))
