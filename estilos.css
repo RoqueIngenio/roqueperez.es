@@ -325,13 +325,15 @@ strong { font-weight: 700; }
 
 /* Dinero con Ingenio */
 .dinero {
-  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center;
+  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: end;
   background: var(--verde-claro);
   border: 2px solid var(--tinta);
   border-radius: 28px;
-  padding: 60px;
+  padding: 60px 60px 0;
   position: relative; overflow: hidden;
 }
+.dinero-texto { padding-bottom: 60px; }
+.dinero-texto .entradilla { margin-bottom: 28px; }
 .dinero .etiqueta { color: var(--verde); }
 .sello {
   display: inline-block;
@@ -351,17 +353,61 @@ strong { font-weight: 700; }
 .canales a { display: inline-flex; align-items: center; gap: 8px; color: var(--verde); font-weight: 700; text-decoration: none; }
 .canales a:hover { text-decoration: underline; }
 
-/* Anotación de la sección Dinero con Ingenio → página de enlaces */
+/* Botones de la sección Dinero con Ingenio */
+.dinero-botones { align-items: center; gap: 16px 20px; margin-top: 30px; }
+.boton-verde { background: var(--verde); border-color: var(--verde); color: var(--blanco); }
+.boton-verde svg { width: 20px; height: 20px; }
 .dinero-anotacion {
-  position: absolute; top: 26px; right: 30px; z-index: 2;
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--blanco); border: 2px solid var(--tinta); border-radius: 12px; box-shadow: 4px 4px 0 var(--tinta);
-  padding: 9px 14px; transform: rotate(3deg);
+  padding: 9px 14px; transform: rotate(-2deg);
   font-family: var(--f-mono); font-size: .8rem; font-weight: 700; color: var(--verde); text-decoration: none;
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .dinero-anotacion:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 6px 6px 0 var(--tinta); }
-@media (max-width: 900px) { .dinero-anotacion { position: static; justify-self: start; margin-bottom: 4px; transform: rotate(-2deg); } }
+
+/* Foto de Roque con camisa verde, apoyada en el borde inferior */
+.dinero-foto { position: relative; align-self: end; display: grid; justify-items: center; }
+.dinero-foto::before {
+  content: ""; position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 18%);
+  width: 96%; max-width: 460px; aspect-ratio: 1; border-radius: 50%;
+  background: var(--verde); opacity: .9;
+}
+.dinero-foto img { position: relative; width: 100%; max-width: 450px; }
+.dinero-bocadillo {
+  position: absolute; top: -70px; left: -10px; z-index: 2; max-width: 240px;
+  background: var(--blanco); border: 2px solid var(--tinta); border-radius: 18px; box-shadow: 4px 4px 0 var(--tinta);
+  padding: 12px 16px; transform: rotate(-3deg);
+  font-size: .9rem; line-height: 1.35; color: var(--tinta); text-decoration: none;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.dinero-bocadillo::after {
+  content: ""; position: absolute; right: 34px; bottom: -11px; width: 18px; height: 18px;
+  background: var(--blanco); border-right: 2px solid var(--tinta); border-bottom: 2px solid var(--tinta);
+  transform: rotate(45deg);
+}
+.dinero-bocadillo strong { color: var(--verde); }
+.dinero-bocadillo:hover { transform: rotate(0deg) translateY(-2px); box-shadow: 6px 6px 0 var(--tinta); }
+.dinero-moneda {
+  position: absolute; right: 4%; top: 30%; z-index: 1;
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--dorado); border: 2px solid var(--tinta); box-shadow: 3px 3px 0 var(--tinta);
+  font-family: var(--f-titulo); font-weight: 800; font-size: 1.3rem; color: var(--tinta);
+  transform: rotate(12deg); animation: flotar 5s ease-in-out infinite;
+}
+.dinero-moneda-2 { right: auto; left: 6%; top: 58%; width: 34px; height: 34px; font-size: 1rem; transform: rotate(-10deg); animation-delay: -2.5s; }
+@keyframes flotar { 50% { translate: 0 -8px; } }
+@media (prefers-reduced-motion: reduce) { .dinero-moneda { animation: none; } }
+@media (max-width: 960px) {
+  .dinero { padding: 40px 28px 0; gap: 10px; }
+  .dinero-texto { padding-bottom: 20px; }
+  .dinero-foto { max-width: 360px; width: 100%; margin: 80px auto 0; }
+  .dinero-bocadillo { top: -64px; left: 0; }
+}
+@media (max-width: 760px) {
+  .dinero { padding: 32px 20px 0; }
+  .dinero-botones .boton { width: 100%; justify-content: center; }
+}
 
 /* Página de enlaces de Dinero con Ingenio (roqueperez.es/dinero/) */
 .dinero-enlaces-portada { padding: 56px 0 40px; background: var(--verde-claro); border-bottom: 2px solid var(--tinta); }
@@ -458,7 +504,6 @@ strong { font-weight: 700; }
   .portada-foto { max-width: 440px; margin: 0 auto; width: 100%; }
   .yo-foto { max-width: 380px; }
   .pilares, .ediciones, .mochila, .estanteria { grid-template-columns: 1fr; }
-  .dinero { padding: 40px 28px; }
   .contacto-texto { padding-bottom: 0; }
   .contacto-foto { order: 2; }
 }
