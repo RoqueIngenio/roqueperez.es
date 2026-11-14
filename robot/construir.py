@@ -514,7 +514,7 @@ def bloques_a_html(bloques, carpeta_img, prefijo_img):
         cerrar_lista()
         if tipo == "paragraph":
             contenido = a_html(datos.get("rich_text"))
-            marca = MARCA_HERRAMIENTA.match(texto_plano(datos.get("rich_text")).strip())
+            marca = MARCA_HERRAMIENTA.match(texto_plano(datos.get("rich_text")).replace("\\", "").strip())
             if marca:  # [herramienta: dirección] → la herramienta, incrustada en el apunte (ver incrustar_herramientas)
                 partes.append(f"<!--HERRAMIENTA:{a_slug(marca.group(1))}-->")
             elif contenido.strip():
