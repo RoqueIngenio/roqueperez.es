@@ -1,0 +1,582 @@
+<!-- Análisis de criticidad de máquinas. El robot la mete en la página
+     roqueperez.es/herramientas/analisis-de-criticidad/ y, además, dentro del apunte
+     «Análisis de criticidad: qué máquinas cuidar primero» (marca [herramienta: analisis-de-criticidad] en Notion).
+     Todos los estilos van dentro de .calc para no chocar con estilos.css, y se adapta al ancho
+     de donde la pongan (container queries): en la ficha va a dos columnas y en el apunte, a una.
+     Los datos se procesan solo en el navegador de quien la usa: no se envían a ningún sitio. -->
+<style>
+.calc.calc-crit { --papel-78: rgba(242, 239, 225, 0.78); --papel-18: rgba(242, 239, 225, 0.18); font-size: 17px; container-type: inline-size; }
+.calc-crit h2, .calc-crit h3 { margin: 0; text-wrap: balance; }
+.calc-crit p { margin: 0; }
+.calc-crit ol, .calc-crit ul { margin: 0; padding: 0; list-style: none; }
+.calc-crit li { margin: 0; }
+
+.calc-crit .rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; align-items: start; padding-bottom: 22px; }
+@container (min-width: 900px) {
+  .calc-crit .rejilla { grid-template-columns: minmax(0, 1fr) 370px; }
+  .calc-crit .panel { position: sticky; top: 90px; }   /* el resultado acompaña mientras se puntúa */
+}
+
+.calc-crit { counter-reset: paso; }
+.calc-crit .calc-paso { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; counter-increment: paso; }
+.calc-crit .calc-paso + .calc-paso { margin-top: 40px; }
+.calc-crit .calc-paso-num::before { content: counter(paso); }
+.calc-crit .calc-paso-cabecera { display: flex; align-items: center; gap: 12px; }
+.calc-crit .calc-paso-num {
+  flex: none; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--dorado); color: var(--tinta); font-family: var(--f-mono); font-weight: 700; font-size: .9rem;
+}
+.calc-crit h2 { font-size: clamp(1.35rem, 2.6vw, 1.6rem); font-weight: 700; }
+.calc-crit h3 { font-size: 1.15rem; font-weight: 700; }
+.calc-crit .pista { font-size: .95rem; color: var(--tinta-3); max-width: 62ch; }
+.calc-crit .pista b { color: var(--tinta-2); }
+
+/* Chuleta de las cuatro preguntas */
+.calc-crit .cr-chuleta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@container (max-width: 480px) { .calc-crit .cr-chuleta { grid-template-columns: minmax(0, 1fr); } }
+.calc-crit .cr-pregunta { background: var(--blanco); border: 2px solid var(--linea); border-radius: 14px; padding: 12px 14px; display: grid; gap: 6px; }
+.calc-crit .cr-pregunta b { font-family: var(--f-titulo); font-size: 1.02rem; color: var(--tinta); }
+.calc-crit .cr-pregunta span { font-size: .88rem; color: var(--tinta-2); line-height: 1.4; }
+.calc-crit .cr-escala { display: grid; gap: 3px; font-size: .84rem; color: var(--tinta-3); line-height: 1.35; }
+.calc-crit .cr-escala i { font-style: normal; font-family: var(--f-mono); font-weight: 700; color: var(--tinta); margin-right: 6px; }
+
+/* Tarjetas de cada máquina */
+.calc-crit .cr-lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.calc-crit .cr-maquina { background: var(--blanco); border: 2px solid var(--tinta); border-radius: 16px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.calc-crit .cr-maquina.completa { border-color: var(--tinta); }
+.calc-crit .cr-maquina.incompleta { border-color: var(--linea); }
+.calc-crit .cr-cab { display: flex; align-items: center; gap: 10px; }
+.calc-crit .cr-num { flex: none; font-family: var(--f-mono); font-size: .8rem; font-weight: 700; color: var(--tinta-3); min-width: 1.6em; }
+.calc-crit .cr-nombre {
+  flex: 1 1 0; width: 0; min-width: 0; font: inherit; font-weight: 600; font-size: 1rem; color: var(--tinta);
+  background: transparent; border: 0; border-bottom: 2px dashed var(--linea); border-radius: 0; padding: 4px 2px;
+}
+.calc-crit .cr-nombre::placeholder { color: var(--tinta-3); font-weight: 400; }
+.calc-crit .cr-nombre:focus { outline: none; border-bottom-color: var(--dorado); }
+.calc-crit .cr-total { flex: none; font-family: var(--f-mono); font-size: .85rem; color: var(--tinta-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.calc-crit .cr-total b { font-size: 1.05rem; color: var(--tinta); }
+@container (max-width: 420px) { .calc-crit .cr-total small { display: none; } .calc-crit .cr-maquina { padding: 12px; } }
+.calc-crit .cr-quitar {
+  flex: none; width: 30px; height: 30px; border-radius: 999px; border: 0; background: transparent; color: var(--tinta-3);
+  font-size: 1.3rem; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.calc-crit .cr-quitar:hover { background: var(--papel-2); color: var(--tinta); }
+.calc-crit .cr-notas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@container (max-width: 560px) { .calc-crit .cr-notas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.calc-crit .cr-criterio { display: grid; gap: 5px; min-width: 0; }
+.calc-crit .cr-criterio-nombre { font-size: .78rem; color: var(--tinta-3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calc-crit .cr-botones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 2px solid var(--linea); border-radius: 10px; overflow: hidden; }
+.calc-crit .cr-botones button {
+  font: inherit; font-family: var(--f-mono); font-weight: 700; font-size: .92rem; padding: 7px 0; border: 0; cursor: pointer;
+  background: transparent; color: var(--tinta-2); transition: background .15s, color .15s;
+}
+.calc-crit .cr-botones button + button { border-left: 2px solid var(--linea); }
+.calc-crit .cr-botones button:hover { background: var(--papel-2); }
+.calc-crit .cr-botones button[aria-pressed="true"] { background: var(--principal); color: var(--papel); }
+.calc-crit .cr-botones button:focus-visible { outline: 3px solid var(--dorado); outline-offset: -3px; }
+
+.calc-crit .cr-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+.calc-crit .lectura { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; font-size: .92rem; }
+.calc-crit .lectura-estado { font-family: var(--f-mono); font-weight: 700; font-size: .82rem; background: var(--papel-2); border-radius: 999px; padding: 3px 10px; }
+.calc-crit .lectura-estado.ok { background: var(--verde-claro); color: var(--verde); }
+.calc-crit .lectura-aviso { color: var(--tinta-3); }
+.calc-crit .enlace-boton {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: .92rem; color: var(--principal);
+  text-decoration: underline; text-decoration-color: var(--dorado); text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.calc-crit .enlace-boton[hidden] { display: none; }
+.calc-crit .cr-pegar-bloque { display: grid; gap: 10px; background: var(--papel-2); border-radius: 16px; padding: 16px; }
+.calc-crit .cr-pegar-bloque[hidden] { display: none; }
+.calc-crit .pegar {
+  width: 100%; min-height: 150px; resize: vertical; font-family: var(--f-mono); font-size: .88rem; line-height: 1.55;
+  background: var(--blanco); color: var(--tinta); border: 2px solid var(--tinta); border-radius: 12px; padding: 12px 14px;
+  white-space: pre; overflow: auto; tab-size: 14;
+}
+.calc-crit .pegar:focus { outline: none; box-shadow: 4px 4px 0 var(--dorado); }
+.calc-crit .cr-pegar-botones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.calc-crit .privacidad { display: flex; gap: 10px; align-items: flex-start; font-size: .93rem; color: var(--tinta); background: var(--verde-claro); border-left: 4px solid var(--verde); border-radius: 12px; padding: 12px 16px; }
+.calc-crit .privacidad b { color: var(--verde); }
+.calc-crit .privacidad::before { content: "🔒"; flex: none; }
+
+/* Resultado */
+.calc-crit .panel { display: flex; flex-direction: column; gap: 22px; }
+.calc-crit .resultado { background: var(--principal); color: var(--papel); border-radius: var(--radio); padding: 26px 24px; display: grid; gap: 18px; }
+.calc-crit .resultado .etiqueta { color: var(--dorado); margin-bottom: 0; }
+.calc-crit .cifra { font-family: var(--f-titulo); font-weight: 800; font-size: clamp(2.8rem, 6vw, 3.8rem); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.calc-crit .cifra-sub { color: var(--papel-78); font-size: 1rem; margin-top: -8px; }
+.calc-crit .datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid var(--papel-18); }
+.calc-crit .dato { display: grid; gap: 2px; min-width: 0; }
+.calc-crit .dato b { font-family: var(--f-mono); font-weight: 700; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.calc-crit .dato span { font-size: .78rem; color: var(--papel-78); line-height: 1.3; }
+.calc-crit .equivale { font-size: .98rem; color: var(--papel); }
+.calc-crit .equivale:empty { display: none; }
+.calc-crit .equivale strong { background: linear-gradient(transparent 62%, rgba(224, 186, 91, 0.5) 62%); padding: 0 2px; }
+
+.calc-crit .tarjeta { background: var(--blanco); border: 2px solid var(--tinta); border-radius: 16px; padding: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; }
+.calc-crit .tarjeta-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; }
+.calc-crit .vacio { font-size: .92rem; color: var(--tinta-3); }
+.calc-crit .cr-ranking { display: grid; gap: 8px; }
+.calc-crit .cr-fila { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto 30px; align-items: center; gap: 10px; font-size: .93rem; }
+.calc-crit .cr-fila .pos { font-family: var(--f-mono); font-size: .8rem; color: var(--tinta-3); }
+.calc-crit .cr-fila .nom { display: grid; gap: 4px; min-width: 0; }
+.calc-crit .cr-fila .nom span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.calc-crit .cr-fila .barra { height: 6px; background: var(--papel-2); border-radius: 999px; overflow: hidden; }
+.calc-crit .cr-fila .barra i { display: block; height: 100%; width: var(--p); border-radius: 999px; }
+.calc-crit .cr-fila .pts { font-family: var(--f-mono); font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.calc-crit .cr-corte { border-top: 2px dashed var(--linea); margin: 4px 0; }
+
+.calc-crit .clase { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-family: var(--f-titulo); font-weight: 800; font-size: 1rem; flex: none; }
+.calc-crit .clase-A { background: var(--dorado); color: var(--tinta); }
+.calc-crit .clase-B { background: var(--papel-2); color: var(--tinta); }
+.calc-crit .clase-C { background: transparent; color: var(--tinta-3); border: 2px solid var(--linea); }
+.calc-crit .clase-x { background: transparent; color: var(--tinta-3); border: 2px dashed var(--linea); font-size: .8rem; }
+.calc-crit .barra-A { background: var(--dorado); }
+.calc-crit .barra-B { background: var(--principal); }
+.calc-crit .barra-C { background: var(--tinta-3); }
+
+.calc-crit .pareja { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: stretch; padding-bottom: 22px; }
+@container (min-width: 900px) { .calc-crit .pareja { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.calc-crit .grupos { display: grid; }
+.calc-crit .grupo { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding-block: 12px; border-top: 1px solid var(--linea); font-size: .93rem; }
+.calc-crit .grupo:first-child { border-top: 0; padding-top: 0; }
+.calc-crit .grupo:last-child { padding-bottom: 0; }
+
+.calc-crit .cr-manana { display: grid; gap: 12px; }
+.calc-crit .cr-manana-fila { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.calc-crit .cr-manana-fila:first-child { border-top: 0; padding-top: 0; }
+.calc-crit .cr-manana-fila b { font-size: .98rem; }
+.calc-crit .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.calc-crit .chip {
+  border: 2px solid var(--linea); background: transparent; color: var(--tinta); border-radius: 999px;
+  padding: 5px 13px; font: inherit; font-size: .88rem; font-weight: 500; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.calc-crit .chip:hover { border-color: var(--tinta); }
+.calc-crit .chip[aria-pressed="true"] { background: var(--principal); border-color: var(--principal); color: var(--papel); }
+.calc-crit .chip.chip-no[aria-pressed="true"] { background: #b5543a; border-color: #b5543a; }
+.calc-crit .cr-conclusion { font-size: .95rem; background: var(--dorado-claro); border-radius: 12px; padding: 12px 14px; }
+.calc-crit .cr-conclusion:empty { display: none; }
+
+.calc-crit .boton { justify-content: center; font: inherit; font-weight: 700; cursor: pointer; }
+.calc-crit .boton-ancho { width: 100%; }
+.calc-crit .compartir { display: grid; gap: 10px; padding-bottom: 44px; }
+.calc-crit .compartir-botones { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@container (min-width: 620px) { .calc-crit .compartir-botones { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.calc-crit .compartir-texto { width: 100%; min-height: 110px; font: inherit; font-size: .9rem; border: 2px solid var(--linea); border-radius: 12px; padding: 12px; background: var(--blanco); color: var(--tinta); }
+.calc-crit .compartir-texto[hidden] { display: none; }
+.calc-crit .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; min-height: 1.4em; }
+.calc-crit .aviso:empty { min-height: 0; }
+
+/* Dentro de un apunte: las preguntas ya las explica el texto y la suscripción está al final de la página */
+.apunte-herramienta .calc-crit .cr-paso-preguntas { display: none; }
+.apunte-herramienta .calc-crit .cr-paso-preguntas + .calc-paso { margin-top: 0; }
+.apunte-herramienta .calc-crit .solo-ficha { display: none; }
+.apunte-herramienta .calc-crit .compartir { padding-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) { .calc-crit * { transition: none !important; } }
+</style>
+
+<div class="calc calc-crit">
+  <div class="rejilla">
+    <div>
+      <section class="calc-paso cr-paso-preguntas">
+        <div class="calc-paso-cabecera"><span class="calc-paso-num"></span><h2>Las cuatro preguntas</h2></div>
+        <p class="pista">Cada máquina se puntúa <b>del 1 al 3</b> en cada pregunta. Se suman las cuatro notas: cuanto más alta, más daño hace cuando se para.</p>
+        <div class="cr-chuleta" id="cr-chuleta"></div>
+      </section>
+
+      <section class="calc-paso">
+        <div class="calc-paso-cabecera"><span class="calc-paso-num"></span><h2>Puntúa tus máquinas</h2></div>
+        <p class="pista">Escribe el nombre de cada máquina y elige su nota en las cuatro preguntas. Mejor hacerlo con <b>mantenimiento, producción y algún operario veterano</b>: cada uno sabe cosas que los otros no.</p>
+        <p class="privacidad"><span><b>Esta web no registra ninguno de tus datos.</b> Lo que escribes se calcula en tu propio navegador: no se envía a ningún servidor, no se guarda y desaparece al cerrar la página.</span></p>
+        <div class="cr-lista" id="cr-lista"></div>
+        <div class="cr-acciones">
+          <button type="button" class="boton boton-secundario" id="cr-anadir">+ Añadir máquina</button>
+          <button type="button" class="enlace-boton" id="cr-abrir-pegar">Pegar una lista desde Excel</button>
+          <button type="button" class="enlace-boton" id="cr-ejemplo">¿Sin datos a mano? Prueba con un ejemplo</button>
+          <button type="button" class="enlace-boton" id="cr-borrar" hidden>Borrar todo</button>
+        </div>
+        <div class="cr-pegar-bloque" id="cr-pegar-bloque" hidden>
+          <p class="pista">Pega <b>una máquina por línea</b>. Si al lado del nombre pegas también <b>cuatro columnas con las notas</b> (producción, alternativa, seguridad y calidad, frecuencia y coste), se rellenan solas.</p>
+          <textarea class="pegar" id="cr-pegar" spellcheck="false" aria-label="Lista de máquinas pegada desde Excel" placeholder="Horno de curado&#9;3&#9;3&#9;2&#9;3&#10;Prensa hidráulica&#9;3&#9;3&#9;3&#9;2&#10;Taladradora de apoyo&#10;…"></textarea>
+          <div class="cr-pegar-botones">
+            <button type="button" class="boton boton-principal" id="cr-pegar-ok">Añadir a la lista</button>
+            <button type="button" class="enlace-boton" id="cr-pegar-cancelar">Cancelar</button>
+            <span class="lectura-aviso" id="cr-pegar-aviso"></span>
+          </div>
+        </div>
+        <div class="lectura">
+          <span class="lectura-estado" id="cr-estado">Sin máquinas puntuadas</span>
+          <span class="lectura-aviso" id="cr-aviso"></span>
+        </div>
+      </section>
+    </div>
+
+    <aside class="panel" aria-live="polite">
+      <div class="resultado">
+        <span class="etiqueta">Tus máquinas críticas</span>
+        <span class="cifra" id="cr-cifra">—</span>
+        <span class="cifra-sub" id="cr-cifra-sub">Puntúa al menos una máquina para ver el resultado.</span>
+        <div class="datos">
+          <div class="dato"><b id="cr-n-A">0</b><span>A · críticas</span></div>
+          <div class="dato"><b id="cr-n-B">0</b><span>B · importantes</span></div>
+          <div class="dato"><b id="cr-n-C">0</b><span>C · no críticas</span></div>
+        </div>
+        <p class="equivale" id="cr-equiv"></p>
+      </div>
+
+      <div class="tarjeta">
+        <div class="tarjeta-cab">
+          <h3>Tu ranking</h3>
+          <button type="button" class="enlace-boton" id="cr-copiar-tabla" hidden data-goatcounter-click="analisis-de-criticidad-copiar-tabla">Copiar para Excel</button>
+        </div>
+        <div id="cr-ranking"><p class="vacio">Aquí verás tus máquinas ordenadas de más a menos críticas.</p></div>
+        <p class="aviso" id="cr-toast-tabla" role="status"></p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="pareja">
+    <div class="tarjeta">
+      <h3>Qué hacer con cada grupo</h3>
+      <div class="grupos" id="cr-grupos"></div>
+    </div>
+    <div class="tarjeta">
+      <h3>Tu propuesta para mañana</h3>
+      <div id="cr-manana"><p class="vacio">Cuando tengas máquinas puntuadas, aquí te quedarás con las tres primeras y una sola pregunta para cada una.</p></div>
+      <p class="cr-conclusion" id="cr-conclusion"></p>
+    </div>
+  </div>
+
+  <div class="compartir">
+    <div class="compartir-botones">
+      <button type="button" class="boton boton-principal boton-ancho" id="cr-copy" data-goatcounter-click="analisis-de-criticidad-copiar-resultado">Copiar mi resultado para compartir</button>
+      <a class="boton boton-secundario boton-ancho solo-ficha" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-de-criticidad-suscribirse">Suscribirse a Ingenio Lean →</a>
+    </div>
+    <textarea class="compartir-texto" id="cr-share-text" readonly hidden aria-label="Texto para compartir"></textarea>
+    <p class="aviso" id="cr-toast" role="status"></p>
+  </div>
+</div>
+
+<script>
+(() => {
+// ===== Parámetros (ajustables) =====
+// Cada máquina suma entre 4 y 12 puntos. A desde 10, B de 7 a 9, C hasta 6.
+const CORTE_A = 10, CORTE_B = 7;
+const MAX_MAQUINAS = 200;
+const SHARE_URL = "https://roqueperez.es/herramientas/analisis-de-criticidad/";
+const PREGUNTAS = [
+  { corto: "Producción", texto: "Si se para, ¿qué pasa?", escala: ["Nada", "Se resiente una sección", "Se para la planta o un cliente importante"] },
+  { corto: "Alternativa", texto: "¿Hay otra máquina que haga lo mismo?", escala: ["Sí, y está libre", "Sí, pero saturada", "No"] },
+  { corto: "Seguridad y calidad", texto: "Si falla, ¿hay riesgo para las personas o el producto?", escala: ["No", "Algo", "Mucho"] },
+  { corto: "Frecuencia y coste", texto: "¿Cuánto falla y cuánto cuesta repararla?", escala: ["Poco y barato", "Intermedio", "Mucho o caro"] }
+];
+const GRUPOS = {
+  A: { nombre: "críticas", consejo: "Mantenimiento preventivo riguroso, repuestos clave en stock y, si compensa, vigilancia de su estado." },
+  B: { nombre: "importantes", consejo: "Preventivo básico y revisión periódica." },
+  C: { nombre: "no críticas", consejo: "Se reparan cuando fallan. Y está bien así: el tiempo que no les dedicas es el que ganan las A." }
+};
+
+// ===== Estado: siempre empieza limpio =====
+let sigId = 1;
+const nueva = (nombre = "", notas = [null, null, null, null]) => ({ id: sigId++, nombre, notas: notas.slice() });
+let maquinas = [nueva(), nueva(), nueva()];
+const preventivo = new Map();   // id de máquina → "si" | "no"
+let res = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (x) => `${Math.round(x * 100)} %`;
+const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
+const completa = (m) => m.notas.every((v) => v !== null);
+const total = (m) => m.notas.reduce((s, v) => s + (v || 0), 0);
+const clase = (t) => t >= CORTE_A ? "A" : t >= CORTE_B ? "B" : "C";
+const nombreDe = (m) => m.nombre.trim() || `Máquina ${maquinas.indexOf(m) + 1}`;
+
+// ===== Chuleta de las preguntas =====
+$("cr-chuleta").innerHTML = PREGUNTAS.map((p) => `<div class="cr-pregunta">
+    <b>${p.corto}</b><span>${p.texto}</span>
+    <div class="cr-escala">${p.escala.map((e, i) => `<span><i>${i + 1}</i>${e}</span>`).join("")}</div>
+  </div>`).join("");
+
+// ===== Lista de máquinas =====
+function htmlMaquina(m, i) {
+  return `<div class="cr-maquina" data-id="${m.id}">
+    <div class="cr-cab">
+      <span class="cr-num">${i + 1}</span>
+      <input class="cr-nombre" type="text" maxlength="80" value="${esc(m.nombre)}" placeholder="Nombre de la máquina" aria-label="Nombre de la máquina ${i + 1}">
+      <span class="cr-total"></span>
+      <span class="clase"></span>
+      <button type="button" class="cr-quitar" aria-label="Quitar la máquina ${i + 1}" title="Quitar">×</button>
+    </div>
+    <div class="cr-notas">${PREGUNTAS.map((p, c) => `<div class="cr-criterio" role="group" aria-label="${p.corto}">
+        <span class="cr-criterio-nombre" title="${esc(p.texto)}">${p.corto}</span>
+        <div class="cr-botones">${[1, 2, 3].map((v) => `<button type="button" data-c="${c}" data-v="${v}" aria-pressed="${m.notas[c] === v}" title="${v} · ${esc(p.escala[v - 1])}">${v}</button>`).join("")}</div>
+      </div>`).join("")}</div>
+  </div>`;
+}
+
+function pintarCabecera(m) {
+  const el = $("cr-lista").querySelector(`[data-id="${m.id}"]`);
+  if (!el) return;
+  const ok = completa(m), t = total(m), faltan = m.notas.filter((v) => v === null).length;
+  el.classList.toggle("completa", ok);
+  el.classList.toggle("incompleta", !ok);
+  el.querySelector(".cr-total").innerHTML = ok ? `<b>${t}</b><small>/12</small>` : (faltan < 4 ? `faltan ${faltan}` : "");
+  const c = el.querySelector(".clase");
+  c.className = `clase ${ok ? `clase-${clase(t)}` : "clase-x"}`;
+  c.textContent = ok ? clase(t) : "–";
+  c.title = ok ? `Grupo ${clase(t)}: ${GRUPOS[clase(t)].nombre}` : "Faltan notas";
+  el.querySelectorAll(".cr-botones button").forEach((b) => b.setAttribute("aria-pressed", String(m.notas[+b.dataset.c] === +b.dataset.v)));
+}
+
+function pintarLista() {
+  $("cr-lista").innerHTML = maquinas.map(htmlMaquina).join("");
+  maquinas.forEach(pintarCabecera);
+  $("cr-anadir").disabled = maquinas.length >= MAX_MAQUINAS;
+}
+
+const buscar = (el) => maquinas.find((m) => m.id === +el.closest(".cr-maquina").dataset.id);
+$("cr-lista").addEventListener("click", (e) => {
+  const boton = e.target.closest(".cr-botones button");
+  if (boton) {
+    const m = buscar(boton), c = +boton.dataset.c, v = +boton.dataset.v;
+    m.notas[c] = m.notas[c] === v ? null : v;   // pulsar otra vez la misma nota la quita
+    pintarCabecera(m);
+    actualizar();
+    return;
+  }
+  const quitar = e.target.closest(".cr-quitar");
+  if (quitar) {
+    const m = buscar(quitar);
+    maquinas = maquinas.filter((x) => x !== m);
+    preventivo.delete(m.id);
+    if (!maquinas.length) maquinas.push(nueva());
+    pintarLista();
+    actualizar();
+  }
+});
+let espera;
+$("cr-lista").addEventListener("input", (e) => {
+  if (!e.target.classList.contains("cr-nombre")) return;
+  buscar(e.target).nombre = e.target.value;
+  clearTimeout(espera);
+  espera = setTimeout(actualizar, 150);
+});
+$("cr-lista").addEventListener("keydown", (e) => {   // Intro en el nombre: pasa a la siguiente máquina (o crea una)
+  if (e.key !== "Enter" || !e.target.classList.contains("cr-nombre")) return;
+  e.preventDefault();
+  const i = maquinas.indexOf(buscar(e.target));
+  if (i === maquinas.length - 1) anadir(); else $("cr-lista").querySelectorAll(".cr-nombre")[i + 1].focus();
+});
+
+function anadir() {
+  if (maquinas.length >= MAX_MAQUINAS) return;
+  maquinas.push(nueva());
+  pintarLista();
+  actualizar();
+  const nombres = $("cr-lista").querySelectorAll(".cr-nombre");
+  nombres[nombres.length - 1].focus();
+}
+$("cr-anadir").addEventListener("click", anadir);
+
+// ===== Pegar desde Excel =====
+const vacia = (m) => !m.nombre.trim() && m.notas.every((v) => v === null);
+function leerPegado(texto) {
+  const nuevas = [];
+  let sinNotas = 0, ignoradas = 0;
+  texto.split(/\r?\n/).forEach((linea, i) => {
+    if (!linea.trim()) return;
+    const celdas = (linea.includes("\t") ? linea.split("\t") : linea.includes(";") ? linea.split(";") : [linea]).map((c) => c.trim());
+    const nombre = celdas[0];
+    const resto = celdas.slice(1).filter((c) => c !== "");
+    if (!nombre) { ignoradas++; return; }
+    // Cabecera: la primera línea con textos en lugar de notas, o un título como «Máquina»
+    if (i === 0 && (resto.some((c) => !/^\d+([.,]\d+)?$/.test(c)) || (!resto.length && /^(m[aá]quinas?|equipos?|nombre)$/i.test(nombre)))) return;
+    const numeros = resto.map((c) => Number(c.replace(",", ".")));
+    const notas = numeros.length >= 4 && numeros.slice(0, 4).every((v) => [1, 2, 3].includes(v)) ? numeros.slice(0, 4) : [null, null, null, null];
+    if (notas[0] === null) sinNotas++;
+    nuevas.push(nueva(nombre.slice(0, 80), notas));
+  });
+  return { nuevas, sinNotas, ignoradas };
+}
+$("cr-abrir-pegar").addEventListener("click", () => {
+  $("cr-pegar-bloque").hidden = false;
+  $("cr-abrir-pegar").hidden = true;
+  $("cr-pegar").focus();
+});
+function cerrarPegar() {
+  $("cr-pegar-bloque").hidden = true;
+  $("cr-abrir-pegar").hidden = false;
+  $("cr-pegar").value = "";
+  $("cr-pegar-aviso").textContent = "";
+}
+$("cr-pegar-cancelar").addEventListener("click", cerrarPegar);
+$("cr-pegar-ok").addEventListener("click", () => {
+  const { nuevas, sinNotas } = leerPegado($("cr-pegar").value);
+  if (!nuevas.length) { $("cr-pegar-aviso").textContent = "No encuentro ninguna máquina. Pega una por línea."; return; }
+  maquinas = maquinas.filter((m) => !vacia(m)).concat(nuevas).slice(0, MAX_MAQUINAS);
+  cerrarPegar();
+  pintarLista();
+  actualizar();
+  $("cr-aviso").textContent = `${plural(nuevas.length, "máquina añadida", "máquinas añadidas")}${sinNotas ? `; puntúa ${sinNotas === 1 ? "la que viene" : "las que vienen"} sin notas` : ""}.`;
+});
+
+// ===== Ejemplo inventado, solo si lo pide quien entra =====
+$("cr-ejemplo").addEventListener("click", () => {
+  maquinas = [
+    ["Horno de curado", [3, 3, 2, 3]], ["Prensa hidráulica 400 t", [3, 3, 3, 2]], ["Compresor principal", [3, 3, 1, 3]],
+    ["Línea de pintura", [2, 3, 2, 2]], ["Robot de soldadura", [2, 2, 2, 2]], ["Torno CNC", [2, 2, 1, 2]],
+    ["Carretilla elevadora 2", [1, 1, 3, 1]], ["Envolvedora de palés", [1, 2, 1, 1]], ["Sierra 2", [1, 1, 1, 2]],
+    ["Taladradora de apoyo", [1, 1, 1, 1]]
+  ].map(([n, v]) => nueva(n, v));
+  preventivo.clear();
+  pintarLista();
+  actualizar();
+});
+$("cr-borrar").addEventListener("click", () => {
+  maquinas = [nueva(), nueva(), nueva()];
+  preventivo.clear();
+  pintarLista();
+  actualizar();
+  $("cr-lista").querySelector(".cr-nombre").focus();
+});
+
+// ===== Cálculo =====
+function calcular() {
+  const hechas = maquinas.filter(completa).map((m) => ({ m, nombre: nombreDe(m), total: total(m), notas: m.notas.slice() }));
+  if (!hechas.length) return null;
+  // De más a menos puntos; si empatan, primero la que más para la producción y luego la de más riesgo
+  hechas.sort((a, b) => b.total - a.total || b.notas[0] - a.notas[0] || b.notas[2] - a.notas[2] || maquinas.indexOf(a.m) - maquinas.indexOf(b.m));
+  hechas.forEach((x, i) => { x.pos = i + 1; x.clase = clase(x.total); });
+  const n = (c) => hechas.filter((x) => x.clase === c).length;
+  return { items: hechas, A: n("A"), B: n("B"), C: n("C") };
+}
+
+// ===== Pintar resultados =====
+function pintarRanking(r) {
+  if (!r) { $("cr-ranking").innerHTML = `<p class="vacio">Aquí verás tus máquinas ordenadas de más a menos críticas.</p>`; return; }
+  let previa = null;
+  $("cr-ranking").innerHTML = `<ol class="cr-ranking">${r.items.map((x) => {
+    const corte = previa && previa !== x.clase ? `<li class="cr-corte" aria-hidden="true"></li>` : "";
+    previa = x.clase;
+    return `${corte}<li class="cr-fila">
+      <span class="pos">${x.pos}</span>
+      <span class="nom"><span title="${esc(x.nombre)}">${esc(x.nombre)}</span><span class="barra"><i class="barra-${x.clase}" style="--p:${(x.total / 12 * 100).toFixed(0)}%"></i></span></span>
+      <span class="pts">${x.total}</span>
+      <span class="clase clase-${x.clase}" title="Grupo ${x.clase}: ${GRUPOS[x.clase].nombre}">${x.clase}</span>
+    </li>`;
+  }).join("")}</ol>`;
+}
+
+function pintarGrupos(r) {
+  $("cr-grupos").innerHTML = ["A", "B", "C"].map((c) => `<div class="grupo">
+      <span class="clase clase-${c}">${c}</span>
+      <span><b>${r ? `${plural(r[c], "máquina", "máquinas")} ${GRUPOS[c].nombre}` : `${GRUPOS[c].nombre[0].toUpperCase()}${GRUPOS[c].nombre.slice(1)}`}${c === "A" ? ` (de ${CORTE_A} a 12 puntos)` : c === "B" ? ` (de ${CORTE_B} a ${CORTE_A - 1})` : ` (hasta ${CORTE_B - 1})`}.</b> ${GRUPOS[c].consejo}</span>
+    </div>`).join("");
+}
+
+function pintarManana(r) {
+  if (!r) {
+    $("cr-manana").innerHTML = `<p class="vacio">Cuando tengas máquinas puntuadas, aquí te quedarás con las tres primeras y una sola pregunta para cada una.</p>`;
+    $("cr-conclusion").textContent = "";
+    return;
+  }
+  const top = r.items.slice(0, 3);
+  $("cr-manana").innerHTML = `<p class="vacio">Quédate con ${top.length === 1 ? "la primera" : `las ${top.length} primeras`} y comprueba una sola cosa: ¿tienen hoy un preventivo que se cumpla de verdad?</p>
+    <div class="cr-manana">${top.map((x) => {
+      const v = preventivo.get(x.m.id);
+      return `<div class="cr-manana-fila" data-id="${x.m.id}">
+        <b>${x.pos}. ${esc(x.nombre)}</b>
+        <div class="chips" role="group" aria-label="¿${esc(x.nombre)} tiene un preventivo que se cumpla?">
+          <button type="button" class="chip" data-prev="si" aria-pressed="${v === "si"}">Sí, se cumple</button>
+          <button type="button" class="chip chip-no" data-prev="no" aria-pressed="${v === "no"}">No, o no siempre</button>
+        </div>
+      </div>`;
+    }).join("")}</div>`;
+  const sin = top.filter((x) => preventivo.get(x.m.id) === "no");
+  const respondidas = top.filter((x) => preventivo.has(x.m.id)).length;
+  $("cr-conclusion").innerHTML = sin.length
+    ? `Ya sabes por dónde empezar: <strong>${esc(sin[0].nombre)}</strong>. Ponle un preventivo sencillo que se pueda cumplir de verdad y revisa qué repuestos clave te faltan en stock.`
+    : respondidas === top.length
+      ? "Buena señal: tus máquinas más críticas tienen su preventivo. Siguiente paso: repuestos clave en stock y, si compensa, vigilar su estado."
+      : "";
+}
+$("cr-manana").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-prev]");
+  if (!b) return;
+  const id = +b.closest(".cr-manana-fila").dataset.id;
+  if (preventivo.get(id) === b.dataset.prev) preventivo.delete(id); else preventivo.set(id, b.dataset.prev);
+  pintarManana(res);
+});
+
+function actualizar() {
+  const usadas = maquinas.filter((m) => !vacia(m));
+  const incompletas = usadas.filter((m) => !completa(m)).length;
+  $("cr-borrar").hidden = !usadas.length;
+  $("cr-ejemplo").hidden = usadas.length > 0;
+  res = calcular();
+
+  const est = $("cr-estado");
+  if (!res) { est.textContent = "Sin máquinas puntuadas"; est.className = "lectura-estado"; }
+  else { est.textContent = plural(res.items.length, "máquina puntuada", "máquinas puntuadas"); est.className = "lectura-estado ok"; }
+  if (!$("cr-aviso").dataset.fijo) $("cr-aviso").textContent = incompletas
+    ? `${plural(incompletas, "máquina", "máquinas")} con notas a medias: no ${incompletas === 1 ? "cuenta" : "cuentan"} hasta tener las cuatro.`
+    : "";
+
+  $("cr-copiar-tabla").hidden = !res;
+  if (!res) {
+    $("cr-cifra").textContent = "—";
+    $("cr-cifra-sub").textContent = "Puntúa al menos una máquina para ver el resultado.";
+    ["A", "B", "C"].forEach((c) => { $(`cr-n-${c}`).textContent = "0"; });
+    $("cr-equiv").textContent = "";
+  } else {
+    const n = res.items.length;
+    $("cr-cifra").textContent = String(res.A);
+    $("cr-cifra-sub").textContent = res.A
+      ? `de tus ${plural(n, "máquina", "máquinas")} ${res.A === 1 ? "es crítica" : "son críticas"}: ${res.A === 1 ? "la que más daño hace" : "las que más daño hacen"} al pararse.`
+      : `de tus ${plural(n, "máquina", "máquinas")} llega a crítica (A). ¿Seguro que ninguna para la planta?`;
+    ["A", "B", "C"].forEach((c) => { $(`cr-n-${c}`).textContent = String(res[c]); });
+    $("cr-equiv").innerHTML = n >= 4 && res.A / n > 0.4
+      ? `<strong>Ojo: te sale crítico el ${pct(res.A / n)} de las máquinas.</strong> Si todo es crítico, nada lo es. Repasad las notas y obligaos a elegir.`
+      : res.A && n >= 4
+        ? `Tus ${res.A === 1 ? "máquina crítica es" : `${res.A} máquinas críticas son`} el <strong>${pct(res.A / n)} de la lista</strong>: ahí va primero el mantenimiento.`
+        : "";
+  }
+  pintarRanking(res);
+  pintarGrupos(res);
+  pintarManana(res);
+}
+
+// ===== Compartir y copiar =====
+async function copiar(texto, ta) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    if (ta) ta.hidden = true;
+    return true;
+  } catch (err) {
+    if (ta) { ta.value = texto; ta.hidden = false; ta.focus(); ta.select(); }
+    return false;
+  }
+}
+$("cr-copy").addEventListener("click", async () => {
+  if (!res) { $("cr-toast").textContent = "Primero puntúa tus máquinas."; return; }
+  const n = res.items.length;
+  const texto = `He hecho el análisis de criticidad de mis máquinas: de ${n}, ${res.A === 1 ? "1 es crítica" : `${res.A} son críticas`} y ${res.A === 1 ? "se lleva" : "se llevan"} el mantenimiento más riguroso. ${res.C ? `Otras ${res.C} pueden esperar a fallar sin que pase nada.` : ""}\n\nSi quieres hacer el tuyo, es gratis y tus datos no salen de tu ordenador: ${SHARE_URL}`;
+  const ok = await copiar(texto.replace(" \n", "\n"), $("cr-share-text"));
+  $("cr-toast").textContent = ok ? "Copiado. Pégalo en LinkedIn, WhatsApp o donde quieras." : "No se pudo copiar automáticamente: selecciona el texto y cópialo.";
+});
+$("cr-copiar-tabla").addEventListener("click", async () => {
+  if (!res) return;
+  const lineas = [["#", "Máquina", ...PREGUNTAS.map((p) => p.corto), "Total", "Grupo"].join("\t"),
+    ...res.items.map((x) => [x.pos, x.nombre, ...x.notas, x.total, x.clase].join("\t"))];
+  const ok = await copiar(lineas.join("\n"));
+  $("cr-toast-tabla").textContent = ok ? "Copiado. Pégalo en una hoja de Excel vacía." : "No se pudo copiar. Prueba con otro navegador.";
+});
+
+pintarLista();
+actualizar();
+})();
+</script>
+
+<!-- NOTAS: lo que va debajo de esta línea lo coloca el robot al final de la página, bajo «Compártela». -->
+Privacidad: la herramienta no registra ni envía ningún dato; todo se calcula en el navegador de quien la usa. Cómo se calcula: cada máquina se puntúa del 1 al 3 en producción, alternativa, seguridad y calidad, y frecuencia y coste, y se suman las cuatro notas (de 4 a 12). Son A (críticas) las que suman 10 o más, B (importantes) las de 7 a 9 y C (no críticas) las de 6 o menos. Si dos máquinas empatan, va primero la que más afecta a la producción y después la de más riesgo. Es un método simplificado: hay otros más formales, con matrices de frecuencia por consecuencia.

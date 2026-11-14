@@ -56,6 +56,8 @@ DS_ESTANTERIA = "ee45a84e-3008-415a-b2a4-1899803e0a41"
 DS_HERRAMIENTAS = "05a9d069-733a-4681-a6ae-7c109803420d"
 DS_ENLACES_DINERO = "8c677e5c-052f-48ce-8078-913d47d3f158"
 CODIGO_HERRAMIENTAS = RAIZ / "herramientas"  # una carpeta por herramienta: herramienta.html, descargas/, vista-previa.jpg, compartir.png
+# En el cuerpo de un apunte, un párrafo que solo diga «[herramienta: analisis-de-criticidad]» mete ahí esa herramienta
+MARCA_HERRAMIENTA = re.compile(r"^\[\s*herramienta\s*:\s*([^\]]+?)\s*\]$", re.IGNORECASE)
 NAVEGADOR = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 SUBSTACK = "https://ingeniolean.substack.com"
 
@@ -512,7 +514,10 @@ def bloques_a_html(bloques, carpeta_img, prefijo_img):
         cerrar_lista()
         if tipo == "paragraph":
             contenido = a_html(datos.get("rich_text"))
-            if contenido.strip():
+            marca = MARCA_HERRAMIENTA.match(texto_plano(datos.get("rich_text")).strip())
+            if marca:  # [herramienta: dirección] → la herramienta, incrustada en el apunte (ver incrustar_herramientas)
+                partes.append(f"<!--HERRAMIENTA:{a_slug(marca.group(1))}-->")
+            elif contenido.strip():
                 partes.append(f"<p>{contenido}</p>")
         elif tipo in ("heading_1", "heading_2"):
             partes.append(f"<h2>{a_html(datos.get('rich_text'))}</h2>")
@@ -761,7 +766,7 @@ def escribir_feed(apuntes):
     for a in apuntes[:20]:
         url = f"{DOMINIO}/apuntes-de-planta/{a['slug']}/"
         fecha = dt.datetime.fromisoformat(a["fecha"]).replace(hour=7, tzinfo=ZoneInfo("Europe/Madrid"))
-        cuerpo = a["cuerpo"].replace('src="img/', f'src="{url}img/').replace('href="../', f'href="{DOMINIO}/apuntes-de-planta/')
+        cuerpo = a.get("cuerpo_feed", a["cuerpo"]).replace('src="img/', f'src="{url}img/').replace('href="../', f'href="{DOMINIO}/apuntes-de-planta/')
         items.append(f"""    <item>
       <title>{html.escape(a["titulo"])}</title>
       <link>{url}</link>
@@ -954,6 +959,7 @@ def preparar_herramienta(h):
     carpeta.mkdir(parents=True, exist_ok=True)
     origen = CODIGO_HERRAMIENTAS / h["slug"]
     h["imagen"] = None
+    h["codigo"] = None  # el código de la calculadora o test, para incrustarla en un apunte
     if (origen / "compartir.png").exists():
         shutil.copy(origen / "compartir.png", carpeta / "compartir.png")
         h["imagen"] = f"{DOMINIO}/herramientas/{h['slug']}/compartir.png"
@@ -975,6 +981,7 @@ def preparar_herramienta(h):
                 cuerpo = cuerpo.replace("/*CONTENIDO_NOTION*/null", datos, 1)
             else:
                 print(f"Aviso: {h['slug']}: la página de Notion no tiene preguntas válidas; se usan las de reserva")
+        h["codigo"] = cuerpo.split("<!-- NOTAS", 1)[0]
         if descargas:  # una calculadora con plantilla para trabajar sin conexión (p. ej. un Excel)
             extra = ('<section class="descarga descarga-extra">\n  <h2>¿Prefieres hacerlo en tu Excel?</h2>\n'
                      '  <p>Descarga la plantilla, pega tus datos y se calcula sola, sin conexión.</p>\n'
@@ -1000,6 +1007,33 @@ def preparar_herramienta(h):
                  f'loading="lazy" width="1400"></figure>\n')
     return (vista + '<div class="descarga">\n  <div class="botones">' + "".join(botones) + "</div>\n"
             '  <p class="descarga-nota">Gratis y sin registro. Si te resulta útil, compártelo con quien le pueda servir.</p>\n</div>')
+
+
+def incrustar_herramientas(cuerpo, herramientas, feed=False):
+    """Pone en el cuerpo de un apunte las herramientas marcadas con [herramienta: dirección] en Notion.
+    Las calculadoras y tests van enteros, para usarlos sin salir del apunte; los descargables, como
+    una tarjeta que lleva a su ficha. Si la herramienta no está publicada, la marca desaparece sin más.
+    Para el feed RSS (feed=True) solo se pone un enlace: los lectores de feeds no ejecutan código."""
+    def poner(m):
+        h = next((h for h in herramientas if h["slug"] == m.group(1)), None)
+        if not h:
+            if not feed:
+                print(f"Aviso: un apunte pide la herramienta «{m.group(1)}», que no está publicada")
+            return ""
+        enlace = f"../../herramientas/{h['slug']}/"
+        if feed:
+            return (f'<p><strong>Herramienta gratuita: {html.escape(h["nombre"])}</strong> '
+                    + (f'{html.escape(h["descripcion"])} ' if h["descripcion"] else "")
+                    + f'<a href="{DOMINIO}/herramientas/{h["slug"]}/">Úsala en la web →</a></p>')
+        cabecera = (f'<div class="apunte-herramienta-cabecera"><span class="etiqueta">Herramienta gratuita · {html.escape(h["tipo"])}</span>'
+                    f'<h2>{html.escape(h["nombre"])}</h2>'
+                    + (f'<p>{html.escape(h["descripcion"])}</p>' if h["descripcion"] else "") + "</div>")
+        if h.get("codigo"):
+            return (f'<section class="apunte-herramienta" aria-label="{html.escape(h["nombre"])}">{cabecera}\n{h["codigo"]}\n'
+                    f'<p class="apunte-herramienta-pie"><a href="{enlace}">Abrir la herramienta en su propia página →</a></p></section>')
+        return (f'<section class="apunte-herramienta apunte-herramienta-tarjeta">{cabecera}'
+                f'<a class="boton boton-principal" href="{enlace}">Ver y descargar →</a></section>')
+    return re.sub(r"<!--HERRAMIENTA:([\w-]+)-->", poner, cuerpo)
 
 
 def pagina_herramienta(h, cuerpo_herramienta, plantilla):
@@ -1214,17 +1248,7 @@ def main():
         portada = reemplazar_entre(portada, "ESTANTERIA", estanteria(libros))
         estado["libros"] = len(libros)
 
-    # 3. Apuntes
-    apuntes = paso("apuntes_notion", apuntes_desde_notion) or []
-    for a in apuntes:
-        a["carpeta"].mkdir(parents=True, exist_ok=True)
-        (a["carpeta"] / "index.html").write_text(volcar_textos(pagina_apunte(a, blog, apuntes), textos))
-    if apuntes:
-        blog = reemplazar_entre(blog, "APUNTES", listado_apuntes(apuntes))
-        portada = reemplazar_entre(portada, "ULTIMOS", ultimos_apuntes(apuntes))
-    estado["apuntes"] = [a["slug"] for a in apuntes]
-
-    # 5. Herramientas
+    # 5. Herramientas (antes que los apuntes, que pueden llevar una incrustada)
     plantilla_herr = (SALIDA / "herramientas" / "index.html").read_text()
     herramientas, publicadas = paso("herramientas_notion", herramientas_desde_notion) or [], []
     for h in herramientas:
@@ -1241,6 +1265,18 @@ def main():
         plantilla_herr = reemplazar_entre(plantilla_herr, "HERRAMIENTAS", listado_herramientas(publicadas))
     portada = reemplazar_entre(portada, "HERRAMIENTAS-PORTADA", herramientas_portada(publicadas))
     estado["herramientas"] = [h["slug"] for h in publicadas]
+
+    # 3. Apuntes
+    apuntes = paso("apuntes_notion", apuntes_desde_notion) or []
+    for a in apuntes:
+        a["cuerpo_feed"] = incrustar_herramientas(a["cuerpo"], publicadas, feed=True)
+        a["cuerpo"] = incrustar_herramientas(a["cuerpo"], publicadas)
+        a["carpeta"].mkdir(parents=True, exist_ok=True)
+        (a["carpeta"] / "index.html").write_text(volcar_textos(pagina_apunte(a, blog, apuntes), textos))
+    if apuntes:
+        blog = reemplazar_entre(blog, "APUNTES", listado_apuntes(apuntes))
+        portada = reemplazar_entre(portada, "ULTIMOS", ultimos_apuntes(apuntes))
+    estado["apuntes"] = [a["slug"] for a in apuntes]
 
     escribir_textos_js(textos)
     (SALIDA / "index.html").write_text(volcar_textos(portada, textos))
