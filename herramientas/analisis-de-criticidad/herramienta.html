@@ -1,8 +1,8 @@
 <!-- Análisis de criticidad de máquinas. El robot la mete en la página
-     roqueperez.es/herramientas/analisis-de-criticidad/ y, además, dentro del apunte
-     «Análisis de criticidad: qué máquinas cuidar primero» (marca [herramienta: analisis-de-criticidad] en Notion).
+     roqueperez.es/herramientas/analisis-de-criticidad/. El apunte «Análisis de criticidad: qué máquinas
+     cuidar primero» lleva a ella con una tarjeta (marca [herramienta: analisis-de-criticidad] en Notion).
      Todos los estilos van dentro de .calc para no chocar con estilos.css, y se adapta al ancho
-     de donde la pongan (container queries): en la ficha va a dos columnas y en el apunte, a una.
+     disponible (container queries): dos columnas en pantallas anchas y una en el móvil.
      Los datos se procesan solo en el navegador de quien la usa: no se envían a ningún sitio. -->
 <style>
 .calc.calc-crit { --papel-78: rgba(242, 239, 225, 0.78); --papel-18: rgba(242, 239, 225, 0.18); font-size: 17px; container-type: inline-size; }
@@ -166,19 +166,13 @@
 .calc-crit .aviso { font-size: .9rem; color: var(--verde); font-weight: 500; min-height: 1.4em; }
 .calc-crit .aviso:empty { min-height: 0; }
 
-/* Dentro de un apunte: las preguntas ya las explica el texto y la suscripción está al final de la página */
-.apunte-herramienta .calc-crit .cr-paso-preguntas { display: none; }
-.apunte-herramienta .calc-crit .cr-paso-preguntas + .calc-paso { margin-top: 0; }
-.apunte-herramienta .calc-crit .solo-ficha { display: none; }
-.apunte-herramienta .calc-crit .compartir { padding-bottom: 0; }
-
 @media (prefers-reduced-motion: reduce) { .calc-crit * { transition: none !important; } }
 </style>
 
 <div class="calc calc-crit">
   <div class="rejilla">
     <div>
-      <section class="calc-paso cr-paso-preguntas">
+      <section class="calc-paso">
         <div class="calc-paso-cabecera"><span class="calc-paso-num"></span><h2>Las cuatro preguntas</h2></div>
         <p class="pista">Cada máquina se puntúa <b>del 1 al 3</b> en cada pregunta. Se suman las cuatro notas: cuanto más alta, más daño hace cuando se para.</p>
         <div class="cr-chuleta" id="cr-chuleta"></div>
@@ -250,7 +244,7 @@
   <div class="compartir">
     <div class="compartir-botones">
       <button type="button" class="boton boton-principal boton-ancho" id="cr-copy" data-goatcounter-click="analisis-de-criticidad-copiar-resultado">Copiar mi resultado para compartir</button>
-      <a class="boton boton-secundario boton-ancho solo-ficha" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-de-criticidad-suscribirse">Suscribirse a Ingenio Lean →</a>
+      <a class="boton boton-secundario boton-ancho" href="https://ingeniolean.substack.com" target="_blank" rel="noopener" data-goatcounter-click="analisis-de-criticidad-suscribirse">Suscribirse a Ingenio Lean →</a>
     </div>
     <textarea class="compartir-texto" id="cr-share-text" readonly hidden aria-label="Texto para compartir"></textarea>
     <p class="aviso" id="cr-toast" role="status"></p>

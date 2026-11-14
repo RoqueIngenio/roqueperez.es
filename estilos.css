@@ -622,14 +622,12 @@ strong { font-weight: 700; }
 .apunte-cuerpo figcaption { font-size: .9rem; color: var(--tinta-3); margin-top: 8px; text-align: center; }
 .apunte-cuerpo code { font-family: var(--f-mono); font-size: .9em; background: var(--papel-2); padding: 1px 6px; border-radius: 4px; }
 .nota-apunte { background: var(--dorado-claro); border-radius: 12px; padding: 18px 22px; margin-bottom: 1.2em; }
-/* Herramienta incrustada en un apunte ([herramienta: dirección] en Notion) */
-.apunte-herramienta { margin: 2.4em 0; padding: 30px 26px 26px; background: var(--papel-2); border-radius: 20px; }
-.apunte-herramienta-cabecera { display: grid; gap: 8px; margin-bottom: 26px; }
-.apunte-herramienta-cabecera .etiqueta { margin: 0; color: var(--principal); }
-.apunte-cuerpo .apunte-herramienta-cabecera h2 { margin: 0; font-size: 1.6rem; }
-.apunte-cuerpo .apunte-herramienta-cabecera p { margin: 0; color: var(--tinta-2); font-size: 1rem; }
-.apunte-cuerpo .apunte-herramienta-pie { margin: 6px 0 0; font-size: .95rem; font-weight: 700; }
-.apunte-herramienta-tarjeta .apunte-herramienta-cabecera { margin-bottom: 18px; }
+/* Tarjeta que lleva a una herramienta desde un apunte ([herramienta: dirección] en Notion) */
+.apunte-herramienta { margin: 2.2em 0; padding: 28px 30px; border-radius: 20px; background: var(--blanco); border: 2px solid var(--tinta); box-shadow: 8px 8px 0 var(--dorado); }
+.apunte-herramienta .etiqueta { margin-bottom: 8px; color: var(--principal); }
+.apunte-cuerpo .apunte-herramienta h2 { margin: 0 0 8px; font-size: 1.5rem; }
+.apunte-cuerpo .apunte-herramienta p { margin: 0 0 20px; color: var(--tinta-2); font-size: 1rem; }
+.apunte-cuerpo .apunte-herramienta .boton { color: var(--tinta); text-decoration: none; }
 .apunte-edicion, .apunte-suscripcion { margin-top: 50px; border-radius: 20px; padding: 32px; }
 .apunte-edicion { background: var(--principal); color: var(--papel); box-shadow: 8px 8px 0 var(--dorado); }
 .apunte-edicion .etiqueta { color: var(--dorado); }
@@ -642,7 +640,7 @@ strong { font-weight: 700; }
   .apuntes-rejilla, .apuntes-rejilla-3 { grid-template-columns: 1fr; }
   .buscador-campo input { padding: 15px 18px; }
   .apunte-edicion, .apunte-suscripcion { padding: 24px 20px; }
-  .apunte-herramienta { margin-inline: -8px; padding: 24px 14px 20px; }
+  .apunte-herramienta { padding: 24px 20px; }
 }
 
 /* ---------- Herramientas: ficha de cada recurso ---------- */
